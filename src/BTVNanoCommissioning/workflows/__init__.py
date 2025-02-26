@@ -35,6 +35,12 @@ from BTVNanoCommissioning.workflows.QCD_soft_mu_validation import (
     NanoProcessor as QCDsmuValidProcessor,
 )
 
+##QCDMu - for SFs
+#from btv-sf-code.SFb-pTrel.SFb-pTrel import(
+from BTVNanoCommissioning.workflows.pTrel import(
+        NanoProcessor as PtRelSFbProcessor,
+)
+
 ## BTA - for SFs
 from BTVNanoCommissioning.workflows.BTA_producer import (
     NanoProcessor as BTA_processor,
@@ -92,6 +98,9 @@ workflows["ectag_Wc_WP_sf"] = partial(
 # DY
 workflows["ctag_DY_sf"] = partial(CTAGDYValidSFProcessor, selectionModifier="DYM")
 workflows["ectag_DY_sf"] = partial(CTAGDYValidSFProcessor, selectionModifier="DYE")
+
+# SFb 
+workflows["pTrel"] = PtRelSFbProcessor
 
 # Tutorial
 # workflows["example"] = ExampleProcessor

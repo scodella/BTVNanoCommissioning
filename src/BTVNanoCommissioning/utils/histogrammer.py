@@ -404,6 +404,9 @@ def histogrammer(events, workflow, year="2022", campaign="Summer22"):
             _hist_dict[f"dr_{i}jet"] = Hist.Hist(
                 syst_axis, flav_axis, dr_axis, Hist.storage.Weight()
             )
+    elif "pTrel" in workflow:
+        ptrel_axis = Hist.axis.Regular(50, 0., 4., name="pTrel", label="p_{T}^{rel} [GeV]")
+        _hist_dict["pTrel"] = Hist.Hist(syst_axis, ptrel_axis, Hist.storage.Weight())
 
     ### Common kinematic variables histogram creation
     if "Wc_sf" not in workflow:
