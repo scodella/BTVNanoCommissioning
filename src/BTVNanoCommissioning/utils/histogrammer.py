@@ -957,7 +957,7 @@ def histo_writter(pruned_ev, output, weights, systematics, isSyst, SF_map):
                     )
             if "jetPtBin" in pruned_ev.fields:
                 if "ptrel"==histname:
-                    output["ptrel"].fill(syst, ptbin=pruned_ev["jetPtBin"], flav=genflavor, ptrel=pruned_ev.SelMuon.pt, weight=weight)
+                    output["ptrel"].fill(syst, ptbin=pruned_ev["jetPtBin"], flav=genflavor, ptrel=pruned_ev["ptrel"], weight=weight)
                 elif "nPV"==histname:
                     output["nPV"].fill(syst, ptbin=pruned_ev["jetPtBin"], npv=pruned_ev.PV.npvsGood, weight=weight)
                 elif "jetpt"==histname:

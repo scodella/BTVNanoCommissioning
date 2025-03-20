@@ -1,0 +1,3 @@
+[submodule "src/btv-sf-code/SFb-pTrel"]
+        path = src/btv-sf-code/SFb-pTrel
+        url = https://gitlab.cern.ch/cms-btv/btv-sf-code
