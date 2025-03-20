@@ -426,8 +426,24 @@ def histogrammer(events, workflow, year="2022", campaign="Summer22"):
                 syst_axis, flav_axis, dr_axis, Hist.storage.Weight()
             )
     elif "pTrel" in workflow:
-        ptrel_axis = Hist.axis.Regular(50, 0., 4., name="pTrel", label="p_{T}^{rel} [GeV]")
-        _hist_dict["pTrel"] = Hist.Hist(syst_axis, ptrel_axis, Hist.storage.Weight())
+        obj_list = []
+        ptbin_axis = Hist.axis.IntCategory([0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11], name="ptbin", label="jet p_{T} bin")
+        if "Kin" in workflow:
+            jetpt_axis = Hist.axis.Regular(1000, 0., 1000., name="jetpt", label="p_{T} [GeV]")
+            _hist_dict["jetpt"] = Hist.Hist(syst_axis, ptbin_axis, jetpt_axis,  Hist.storage.Weight())
+            jeteta_axis = Hist.axis.Regular(50, -2.5, 2.5, name="jeteta",label="#mu-jet #eta")
+            _hist_dict["jeteta"] = Hist.Hist(syst_axis, ptbin_axis, jeteta_axis, Hist.storage.Weight())
+            npv_axis = Hist.axis.Integer(0, 100, name="npv", label="N PVs")
+            _hist_dict["nPV"] = Hist.Hist(syst_axis, ptbin_axis, npv_axis, Hist.storage.Weight())
+            if "Light" not in workflow:
+                mujetdr_axis = Hist.axis.Regular(20, 0, 0.5, name="mujetdr", label="DeltaR")
+                _hist_dict["DR"] = Hist.Hist(syst_axis, ptbin_axis, mujetdr_axis, Hist.storage.Weight())
+                muopt_axis = Hist.axis.Regular(20, 0., 100., name="muopt", label="mu p_{T} [GeV]")
+                _hist_dict["muopt"] = Hist.Hist(syst_axis, ptbin_axis, muopt_axis, Hist.storage.Weight())
+        else:
+            ptrel_axis = Hist.axis.Regular(50, 0., 4., name="ptrel", label="p_{T}^{rel} [GeV]")
+            _hist_dict["ptrel"] = Hist.Hist(syst_axis, ptbin_axis, flav_axis, ptrel_axis, Hist.storage.Weight())
+        return _hist_dict
 
     ### Common kinematic variables histogram creation
     if "Wc_sf" not in workflow:
@@ -939,6 +955,19 @@ def histo_writter(pruned_ev, output, weights, systematics, isSyst, SF_map):
                         discr=seljet[histname.replace(f"_{i}", "")],
                         weight=weights.partial_weight(exclude=exclude_btv),
                     )
+            if "jetPtBin" in pruned_ev.fields:
+                if "ptrel"==histname:
+                    output["ptrel"].fill(syst, ptbin=pruned_ev["jetPtBin"], flav=genflavor, ptrel=pruned_ev.SelMuon.pt, weight=weight)
+                elif "nPV"==histname:
+                    output["nPV"].fill(syst, ptbin=pruned_ev["jetPtBin"], npv=pruned_ev.PV.npvsGood, weight=weight)
+                elif "jetpt"==histname:
+                    output["jetpt"].fill(syst, ptbin=pruned_ev["jetPtBin"], jetpt=pruned_ev.SelJet.pt, weight=weight)
+                elif "jeteta"==histname:
+                    output["jeteta"].fill(syst, ptbin=pruned_ev["jetPtBin"], jeteta=pruned_ev.SelJet.eta, weight=weight)
+                elif "DR"==histname:
+                    output["DR"].fill(syst, ptbin=pruned_ev["jetPtBin"], mujetdr=pruned_ev["muJetDR"], weight=weight)
+                elif "muopt"==histname:
+                    output["muopt"].fill(syst, ptbin=pruned_ev["jetPtBin"], muopt=pruned_ev.SelMuo.pt, weight=weight)
 
         if "dr_poslnegl" in output.keys():
             # DY histograms

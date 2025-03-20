@@ -100,7 +100,10 @@ workflows["ctag_DY_sf"] = partial(CTAGDYValidSFProcessor, selectionModifier="DYM
 workflows["ectag_DY_sf"] = partial(CTAGDYValidSFProcessor, selectionModifier="DYE")
 
 # SFb 
-workflows["pTrel"] = PtRelSFbProcessor
+workflows["pTrel"]         = partial(PtRelSFbProcessor, selectionModifier="")
+workflows["pTrelLight"]    = partial(PtRelSFbProcessor, selectionModifier="Light")
+workflows["pTrelKin"]      = partial(PtRelSFbProcessor, selectionModifier="Kin")
+workflows["pTrelKinLight"] = partial(PtRelSFbProcessor, selectionModifier="KinLight")
 
 # Tutorial
 # workflows["example"] = ExampleProcessor
