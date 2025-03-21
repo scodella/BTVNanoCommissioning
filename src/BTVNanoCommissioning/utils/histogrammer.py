@@ -425,10 +425,16 @@ def histogrammer(events, workflow, year="2022", campaign="Summer22"):
             _hist_dict[f"dr_{i}jet"] = Hist.Hist(
                 syst_axis, flav_axis, dr_axis, Hist.storage.Weight()
             )
+    elif "workingPoints" in workflow:
+        obj_list = []
+        btagdisc_axis = Hist.axis.Regular(11000, 0, 1.1, name="btagdisc", label="b-tagging discriminant")
+        for tagger in btag_wp_dict[year+"_"+campaign]:
+            _hist_dict["btagdisc_"+tagger] = Hist.Hist(syst_axis, flav_axis, btagdisc_axis, Hist.storage.Weight())
+        return _hist_dict
     elif "pTrel" in workflow:
         obj_list = []
         ptbin_axis = Hist.axis.IntCategory([0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11], name="ptbin", label="jet p_{T} bin")
-        if "Kin" in workflow:
+        if "Kinematics" in workflow:
             jetpt_axis = Hist.axis.Regular(1000, 0., 1000., name="jetpt", label="p_{T} [GeV]")
             _hist_dict["jetpt"] = Hist.Hist(syst_axis, ptbin_axis, jetpt_axis,  Hist.storage.Weight())
             jeteta_axis = Hist.axis.Regular(50, -2.5, 2.5, name="jeteta",label="#mu-jet #eta")
@@ -446,8 +452,7 @@ def histogrammer(events, workflow, year="2022", campaign="Summer22"):
                 _hist_dict["ptrel"] = Hist.Hist(syst_axis, ptbin_axis, flav_axis, ptrel_axis, Hist.storage.Weight())
             else:
                 btagwp_axis = Hist.axis.IntCategory([0, 1, 2, 3, 4, 5], name="btagwp", label="Pass b-tag WP")
-                wp_dict_campaign = btag_wp_dict[year+"_"+campaign]
-                for tagger in wp_dict_campaign:
+                for tagger in btag_wp_dict[year+"_"+campaign]:
                     _hist_dict["ptrel_"+tagger] = Hist.Hist(syst_axis, ptbin_axis, flav_axis, ptrel_axis, btagwp_axis, Hist.storage.Weight())
 
         return _hist_dict
@@ -962,6 +967,8 @@ def histo_writter(pruned_ev, output, weights, systematics, isSyst, SF_map):
                         discr=seljet[histname.replace(f"_{i}", "")],
                         weight=weights.partial_weight(exclude=exclude_btv),
                     )
+            if "btagdisc_" in histname:
+                output[histname].fill(syst, flav=genflavor, btagdisc=pruned_ev.SelJet["btag"+histname.split("_")[1]+"B"], weight=weight)
             if "jetPtBin" in pruned_ev.fields:
                 if "nPV"==histname:
                     output["nPV"].fill(syst, ptbin=pruned_ev["jetPtBin"], npv=pruned_ev.PV.npvsGood, weight=weight)
