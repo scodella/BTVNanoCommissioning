@@ -442,7 +442,14 @@ def histogrammer(events, workflow, year="2022", campaign="Summer22"):
                 _hist_dict["muopt"] = Hist.Hist(syst_axis, ptbin_axis, muopt_axis, Hist.storage.Weight())
         else:
             ptrel_axis = Hist.axis.Regular(50, 0., 4., name="ptrel", label="p_{T}^{rel} [GeV]")
-            _hist_dict["ptrel"] = Hist.Hist(syst_axis, ptbin_axis, flav_axis, ptrel_axis, Hist.storage.Weight())
+            if "Light" in workflow:
+                _hist_dict["ptrel"] = Hist.Hist(syst_axis, ptbin_axis, flav_axis, ptrel_axis, Hist.storage.Weight())
+            else:
+                btagwp_axis = Hist.axis.IntCategory([0, 1, 2, 3, 4, 5], name="btagwp", label="Pass b-tag WP")
+                wp_dict_campaign = btag_wp_dict[year+"_"+campaign]
+                for tagger in wp_dict_campaign:
+                    _hist_dict["ptrel_"+tagger] = Hist.Hist(syst_axis, ptbin_axis, flav_axis, ptrel_axis, btagwp_axis, Hist.storage.Weight())
+
         return _hist_dict
 
     ### Common kinematic variables histogram creation
@@ -956,9 +963,7 @@ def histo_writter(pruned_ev, output, weights, systematics, isSyst, SF_map):
                         weight=weights.partial_weight(exclude=exclude_btv),
                     )
             if "jetPtBin" in pruned_ev.fields:
-                if "ptrel"==histname:
-                    output["ptrel"].fill(syst, ptbin=pruned_ev["jetPtBin"], flav=genflavor, ptrel=pruned_ev["ptrel"], weight=weight)
-                elif "nPV"==histname:
+                if "nPV"==histname:
                     output["nPV"].fill(syst, ptbin=pruned_ev["jetPtBin"], npv=pruned_ev.PV.npvsGood, weight=weight)
                 elif "jetpt"==histname:
                     output["jetpt"].fill(syst, ptbin=pruned_ev["jetPtBin"], jetpt=pruned_ev.SelJet.pt, weight=weight)
@@ -968,6 +973,10 @@ def histo_writter(pruned_ev, output, weights, systematics, isSyst, SF_map):
                     output["DR"].fill(syst, ptbin=pruned_ev["jetPtBin"], mujetdr=pruned_ev["muJetDR"], weight=weight)
                 elif "muopt"==histname:
                     output["muopt"].fill(syst, ptbin=pruned_ev["jetPtBin"], muopt=pruned_ev.SelMuo.pt, weight=weight)
+                elif "ptrel_" in histname:
+                    output[histname].fill(syst, ptbin=pruned_ev["jetPtBin"], flav=genflavor, ptrel=pruned_ev["ptrel"], btagwp=pruned_ev[histname.split("_")[1]], weight=weight)
+                elif "ptrel"==histname:
+                    output["ptrel"].fill(syst, ptbin=pruned_ev["jetPtBin"], flav=genflavor, ptrel=pruned_ev["ptrel"], weight=weight)
 
         if "dr_poslnegl" in output.keys():
             # DY histograms
