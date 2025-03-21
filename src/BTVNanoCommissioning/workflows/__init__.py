@@ -106,12 +106,18 @@ workflows["ctag_DY_sf"] = partial(CTAGDYValidSFProcessor, selectionModifier="DYM
 workflows["ectag_DY_sf"] = partial(CTAGDYValidSFProcessor, selectionModifier="DYE")
 
 # SFb
-workflows["workingPoints"] = partial(PtRelSFbProcessor, selectionModifier="WP")
+workflows["workingPoints"] = partial(PtRelSFbProcessor, selectionModifier="workingPoints")
 for dataset in [ "", "Light" ]:
     for step in [ "Kinematics", "Templates" ]:
-        selection_list = [ "" ] if "Kinematics" in step else [ "", "MuPtUp", "MuDRUp", "AwayJetUp", "MuPtDown", "MuDRDown", "AwayJetDown" ]
+        selection_list = [ "" ] 
+        if "Templates" in step:
+            selection_list.extend([ "MuPtDown", "MuPtUp", "MuDRDown", "MuDRUp" ])
+            if dataset=="": selection_list.extend([ "AwayJetDown" , "AwayJetUp" ])
         for selection in selection_list:
-            workflows["pTrel"+dataset+step+selection] = partial(PtRelSFbProcessor, selectionModifier=dataset+selection)
+            workflow_flag = dataset+step+selection
+            workflows["pTrel"+workflow_flag] = partial(PtRelSFbProcessor, selectionModifier="pTrel"+workflow_flag)
+            if dataset=="":
+                workflows["System8"+workflow_flag] = partial(PtRelSFbProcessor, selectionModifier="System8"+workflow_flag)
 
 # Tutorial
 # workflows["example"] = ExampleProcessor

@@ -431,7 +431,7 @@ def histogrammer(events, workflow, year="2022", campaign="Summer22"):
         for tagger in btag_wp_dict[year+"_"+campaign]:
             _hist_dict["btagdisc_"+tagger] = Hist.Hist(syst_axis, flav_axis, btagdisc_axis, Hist.storage.Weight())
         return _hist_dict
-    elif "pTrel" in workflow:
+    elif "pTrel" in workflow or "System8" in workflow:
         obj_list = []
         ptbin_axis = Hist.axis.IntCategory([0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11], name="ptbin", label="jet p_{T} bin")
         if "Kinematics" in workflow:
@@ -446,7 +446,7 @@ def histogrammer(events, workflow, year="2022", campaign="Summer22"):
                 _hist_dict["DR"] = Hist.Hist(syst_axis, ptbin_axis, mujetdr_axis, Hist.storage.Weight())
                 muopt_axis = Hist.axis.Regular(20, 0., 100., name="muopt", label="mu p_{T} [GeV]")
                 _hist_dict["muopt"] = Hist.Hist(syst_axis, ptbin_axis, muopt_axis, Hist.storage.Weight())
-        else:
+        elif "pTrel" in workflow:
             ptrel_axis = Hist.axis.Regular(50, 0., 4., name="ptrel", label="p_{T}^{rel} [GeV]")
             if "Light" in workflow:
                 _hist_dict["ptrel"] = Hist.Hist(syst_axis, ptbin_axis, flav_axis, ptrel_axis, Hist.storage.Weight())
