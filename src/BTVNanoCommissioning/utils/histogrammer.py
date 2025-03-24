@@ -449,11 +449,16 @@ def histogrammer(events, workflow, year="2022", campaign="Summer22"):
         elif "pTrel" in workflow:
             ptrel_axis = Hist.axis.Regular(50, 0., 4., name="ptrel", label="p_{T}^{rel} [GeV]")
             if "Light" in workflow:
-                _hist_dict["ptrel"] = Hist.Hist(syst_axis, ptbin_axis, flav_axis, ptrel_axis, Hist.storage.Weight())
+                _hist_dict["ptrel"] = Hist.Hist(syst_axis, ptbin_axis, ptrel_axis, Hist.storage.Weight())
             else:
                 btagwp_axis = Hist.axis.IntCategory([0, 1, 2, 3, 4, 5], name="btagwp", label="Pass b-tag WP")
-                for tagger in btag_wp_dict[year+"_"+campaign]:
-                    _hist_dict["ptrel_"+tagger] = Hist.Hist(syst_axis, ptbin_axis, flav_axis, ptrel_axis, btagwp_axis, Hist.storage.Weight())
+                if "pTrel" in workflow:
+                    for tagger in btag_wp_dict[year+"_"+campaign]:
+                        _hist_dict["ptrel_"+tagger] = Hist.Hist(syst_axis, ptbin_axis, flav_axis, ptrel_axis, btagwp_axis, Hist.storage.Weight())
+                elif "System8" in workflow:
+                    tagawj_axis = Hist.axis.IntCategory([0, 1], name="tagawj", label="Tagged away jet")
+                    for tagger in btag_wp_dict[year+"_"+campaign]:
+                        _hist_dict["ptrel_"+tagger] = Hist.Hist(syst_axis, ptbin_axis, flav_axis, ptrel_axis, btagwp_axis, tagawj_axis, Hist.storage.Weight())
 
         return _hist_dict
 
@@ -981,7 +986,10 @@ def histo_writter(pruned_ev, output, weights, systematics, isSyst, SF_map):
                 elif "muopt"==histname:
                     output["muopt"].fill(syst, ptbin=pruned_ev["jetPtBin"], muopt=pruned_ev.SelMuo.pt, weight=weight)
                 elif "ptrel_" in histname:
-                    output[histname].fill(syst, ptbin=pruned_ev["jetPtBin"], flav=genflavor, ptrel=pruned_ev["ptrel"], btagwp=pruned_ev[histname.split("_")[1]], weight=weight)
+                    if "taggedAwayJet" in pruned_ev.fields:
+                        output[histname].fill(syst, ptbin=pruned_ev["jetPtBin"], flav=genflavor, ptrel=pruned_ev["ptrel"], btagwp=pruned_ev[histname.split("_")[1]], tagawj=pruned_ev["taggedAwayJet"], weight=weight)
+                    else:
+                        output[histname].fill(syst, ptbin=pruned_ev["jetPtBin"], flav=genflavor, ptrel=pruned_ev["ptrel"], btagwp=pruned_ev[histname.split("_")[1]], weight=weight)
                 elif "ptrel"==histname:
                     output["ptrel"].fill(syst, ptbin=pruned_ev["jetPtBin"], flav=genflavor, ptrel=pruned_ev["ptrel"], weight=weight)
 
