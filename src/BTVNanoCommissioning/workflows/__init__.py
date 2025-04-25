@@ -36,7 +36,6 @@ from BTVNanoCommissioning.workflows.QCD_soft_mu_validation import (
 )
 
 ##QCDMu - for SFs
-#from btv-sf-code.SFb-pTrel.SFb-pTrel import(
 from BTVNanoCommissioning.workflows.pTrel import(
         NanoProcessor as PtRelSFbProcessor,
 )
@@ -109,15 +108,17 @@ workflows["ectag_DY_sf"] = partial(CTAGDYValidSFProcessor, selectionModifier="DY
 workflows["workingPoints"] = partial(PtRelSFbProcessor, selectionModifier="workingPoints")
 for dataset in [ "", "Light" ]:
     for step in [ "Kinematics", "Templates" ]:
-        selection_list = [ "" ] 
+        selection_list = [ "" ]
+        correction_list = [ "", ".mujetpt", "mujetpt.mujeteta" ] if dataset=="" else [ "", ".lightjetpt", "lightjetpt.lightjeteta" ]
         if "Templates" in step:
             selection_list.extend([ "MuPtDown", "MuPtUp", "MuDRDown", "MuDRUp" ])
             if dataset=="": selection_list.extend([ "AwayJetDown" , "AwayJetUp" ])
         for selection in selection_list:
-            workflow_flag = dataset+step+selection
-            workflows["pTrel"+workflow_flag] = partial(PtRelSFbProcessor, selectionModifier="pTrel"+workflow_flag)
-            if dataset=="":
-                workflows["System8"+workflow_flag] = partial(PtRelSFbProcessor, selectionModifier="System8"+workflow_flag)
+            for correction in correction_list:
+                workflow_flag = dataset+step+selection+correction
+                for method in [ "pTrel", "System8" ]:
+                    if method=="pTrel" or dataset=="":
+                        workflows[method+workflow_flag]   = partial(PtRelSFbProcessor, selectionModifier=method+workflow_flag)
 
 # Tutorial
 # workflows["example"] = ExampleProcessor

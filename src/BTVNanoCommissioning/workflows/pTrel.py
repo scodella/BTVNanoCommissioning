@@ -34,6 +34,9 @@ from BTVNanoCommissioning.utils.selection import (
 
 def load_Campaign(self):
 
+    ## Method
+    self._method = "pTrel" if "pTrel" in self.tag else "System8"
+
     ## HLT
     self.triggerInfos = collections.OrderedDict()
     self.triggerInfos['BTagMu_AK4DiJet20_Mu5']  = { 'jetPtRange' : [  20.,   50. ], 'ptAwayJet' : 20., 'ptTriggerEmulation' :  30., 'jetTrigger' :  'PFJet40' }
@@ -65,7 +68,7 @@ def load_Campaign(self):
 
     ## Muon selection
     self.muonKinBins = collections.OrderedDict()
-    if "pTrel" in self.tag:
+    if self._method=="pTrel":
         self.muonKinBins["Bin1"] = { "range" : [  20.,   50. ], "pt" : 5., "dr" : 0.20 }
         self.muonKinBins["Bin2"] = { "range" : [  50.,  100. ], "pt" : 5., "dr" : 0.15 }
         self.muonKinBins["Bin3"] = { "range" : [ 100., 1400. ], "pt" : 5., "dr" : 0.12 }
@@ -79,7 +82,7 @@ def load_Campaign(self):
                     if "MuPtUp"   in self.tag: self.muonKinBins[mubin]["pt"] = 8.
                     if "MuPtDown" in self.tag: self.muonKinBins[mubin]["pt"] = 6.
                     if "MuDRDown" in self.tag: self.muonKinBins[mubin]["dr"] = 999.
-    elif "System8" in self.tag:
+    elif self._method=="System8":
         self.muonKinBins["Bin1"] = { "range" : [  20., 1400. ], "pt" : 5., "dr" : 0.40 }
         if "MuPtUp"   in self.tag: self.muonKinBins["Bin1"]["pt"] = 8.
         if "MuPtDown" in self.tag: self.muonKinBins["Bin1"]["pt"] = 6.
@@ -117,11 +120,13 @@ def get_psweight(jetPtBins, ps_run_num, jetPtBin, run, luminosityBlock):
     for iptbin, ptbin in enumerate(self.jetPtBins):
         ptBin = ak.full_like(jetPtBin, iptbin+1)
         ptbin_trigger = jetPtBins[ptbin]['trigger']
-        pseval = correctionlib.CorrectionSet.from_file(
-            f"src/BTVNanoCommissioning/data/Prescales/ps_weight_{ptbin_trigger}_run{ps_run_num}.json"
-        )
-        psweight = ak.values_astype( psweight + (jetPtBins==ptBin)*pseval["prescaleWeight"].evaluate(run, f"HLT_{ptbin_trigger}", ak.values_astype(luminosityBlock, np.float32)), float,)
+        pseval = correctionlib.CorrectionSet.from_file( f"src/BTVNanoCommissioning/data/Prescales/ps_weight_{ptbin_trigger}_run{ps_run_num}.json" )
+        psweight = ak.values_astype( psweight + (jetPtBins==ptBin)*pseval.evaluate(run, f"HLT_{ptbin_trigger}", ak.values_astype(luminosityBlock, np.float32)), float,)
     return psweight
+
+def get_kinematic_weight(jetPt, jetEta, method, campaign, dataset, level):
+    kineval = correctionlib.CorrectionSet.from_file( f"src/BTVNanoCommissioning/data/KinematicWeights/{campaign}/{method}_{dataset}_{level}.json" )
+    return kineval.evaluate(jetPt, jetEta)
 
 class NanoProcessor(processor.ProcessorABC):
     def __init__(
@@ -219,7 +224,7 @@ class NanoProcessor(processor.ProcessorABC):
             mujet_sel = ak.fill_none( (ak.all(events.Jet.metric_table(event_softmu)<0.5,axis=2)) & (events.Jet.pt>=20.) & (events.Jet.pt<1000.) & (abs(events.Jet.eta)<2.5) & (events.Jet.jetId>=4), False, axis=-1 )
             event_mujet = events.Jet[ mujet_sel ]
 
-            if "pTrel" in self.tag:
+            if self._method=="pTrel":
 
                 awayjet_sel = ak.fill_none( (ak.all(events.Jet.metric_table(event_mujet)>1.5,axis=2)) & (events.Jet.pt>=20.) & (abs(events.Jet.eta)<2.5) & (events.Jet.jetId>=4) & (events.Jet[self.btagAwayJetDiscriminant]>=self.btagAwayJetCut), False, axis=-1 )
                 event_awayjet = events.Jet[ awayjet_sel ]
@@ -228,7 +233,7 @@ class NanoProcessor(processor.ProcessorABC):
 
                 req_sel = (ak.num(event_softmu.pt)==1) & (ak.num(event_mujet.pt)==1) & (ak.num(event_awayjet.pt)==1) & req_trg
 
-            elif "System8" in self.tag:
+            elif self._method=="System8":
 
                 awayjet_sel = ak.fill_none( (ak.all(events.Jet.metric_table(event_mujet)>0.05,axis=2)) & (events.Jet.pt>=20.) & (abs(events.Jet.eta)<2.5) & (events.Jet.jetId>=4), False, axis=-1 )
                 event_awayjet = events.Jet[ awayjet_sel ]
@@ -275,10 +280,10 @@ class NanoProcessor(processor.ProcessorABC):
                     awayPtCut = float(self.triggerInfos[self.jetPtBins[ptbin]['trigger']]['ptAwayJet'])
                     muPtCut, muDRCut = self.jetPtBins[ptbin]["muPtCut"], self.jetPtBins[ptbin]["muDRCut"]
 
-                    if "pTrel" in self.tag:
+                    if self._method=="pTrel":
                         emulPtCut = float(self.triggerInfos[self.jetPtBins[ptbin]['trigger']]['ptTriggerEmulation'])
                         pruned_ev["jetPtBin"] = ak.values_astype( pruned_ev["jetPtBin"] + (iptbin+1)*triggerCut*((pruned_ev.SelJet.pt>=minPtCut) & (pruned_ev.SelJet.pt<maxPtCut) & (pruned_ev.AwayJet.pt>=awayPtCut) & (pruned_ev.EmulJet.pt>=emulPtCut) & (pruned_ev.SelMuo.pt>=muPtCut) & (pruned_ev.SelMuo.delta_r(pruned_ev.SelJet)<=muDRCut)), int,)
-                    elif "System8" in self.tag:
+                    elif self._method=="System8":
                         pruned_ev["jetPtBin"] = ak.values_astype( pruned_ev["jetPtBin"] + (iptbin+1)*triggerCut*((pruned_ev.SelJet.pt>=minPtCut) & (pruned_ev.SelJet.pt<maxPtCut) & (pruned_ev.AwayJet.pt>=awayPtCut) & (pruned_ev.SelMuo.pt>=muPtCut) & (pruned_ev.SelMuo.delta_r(pruned_ev.SelJet)<=muDRCut)), int,)
 
             if not isRealData:
@@ -297,7 +302,7 @@ class NanoProcessor(processor.ProcessorABC):
                         for wp in wp_dict_campaign[tagger]["b"]:
                             if wp!="No":
                                 pruned_ev[tagger] = ak.values_astype( pruned_ev[tagger] + (pruned_ev.SelJet["btag"+tagger+"B"]>wp_dict_campaign[tagger]["b"][wp]), int,)
-                    if "System8" in self.tag:
+                    if self._method=="System8":
                         pruned_ev["taggedAwayJet"] = ak.values_astype( (pruned_ev.AwayJet[self.btagAwayJetDiscriminant]>=self.btagAwayJetCut), int,)
 
         ## <========= end: store custom objects
@@ -306,9 +311,9 @@ class NanoProcessor(processor.ProcessorABC):
         ####################
         # Configure SFs
         weights = weight_manager(pruned_ev, self.SF_map, self.isSyst)
-        if isRealData:
-            # Prescales
-            weights.add("psweight", get_psweight(self.jetPtBins, self.ps_run_num, pruned_ev["jetPtBin"], pruned_ev.run, pruned_ev.luminosityBlock))
+        if isRealData: # Prescales
+            isValidated = False
+            if isValidated: weights.add("psweight", get_psweight(self.jetPtBins, self.ps_run_num, pruned_ev["jetPtBin"], pruned_ev.run, pruned_ev.luminosityBlock))
         elif "Light" not in self.tag:
             is_heavy_hadron = lambda p, pid: (abs(p.pdgId) // 100 == pid) | ( abs(p.pdgId) // 1000 == pid )
             sel_bhadrons = is_heavy_hadron(pruned_ev.GenPart, 5) & (pruned_ev.GenPart.hasFlags("isLastCopy")) & (ak.all(pruned_ev.GenPart.metric_table(pruned_ev.SelJet)<0.5,axis=2))
@@ -317,7 +322,7 @@ class NanoProcessor(processor.ProcessorABC):
                                 "eta": bhadrons.eta,
                                 "phi": bhadrons.phi,
                                 "pdgID": bhadrons.pdgId,
-                                "mass": get_hadron_mass(bhadrons.pdgId),
+                                #"mass": get_hadron_mass(bhadrons.pdgId),
                                 "hasBdaughter": ak.values_astype(
                                    ak.any(is_heavy_hadron(bhadrons.children, 5), axis=-1), int
                                  ),  # B hadrons with B-daughters not removed
@@ -330,7 +335,11 @@ class NanoProcessor(processor.ProcessorABC):
             weights.add("gluonSplitting", gluonSplitting, gluonSplittingUp, gluonSplittingDown)
             # b-hadron fragmentation
             bHadronID = ak.values_astype( -1*(ak.num(lastBHadron)==0) + 1.0*(ak.num(lastBHadron)>0), int,)
-
+        if "." in self.tag and (not isRealData or "Light" in self.tag): # Kinematic corrections
+            dataset = "Jet" if isRealData else "QCD" if "Light" in self.tag else "QCDMu"
+            #for level in [ self.tag.split(".",1)[-1].replace("."+self.tag.split(".",1)[-1].split(".",x)[x],"") for x in range(len(opt.self.split("."))-1) ]:
+            for level in [ ".".join( self.tag.split(".")[1:x] for x in range(2,len(opt.self.split("."))+1) ) ]:
+                weight.add(level.split(".")[-1], get_kinematic_weight(pruned_ev.JetSel.pt, pruned_ev.JetSel.eta, self._method, self._year+"_"+self._campaign, dataset, level))
 
         # Configure systematics
         if shift_name is None:
