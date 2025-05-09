@@ -2,6 +2,7 @@ import collections, awkward as ak, numpy as np
 import os
 import uproot
 from coffea import processor
+from coffea.lookup_tools import extractor
 from coffea.analysis_tools import Weights
 
 # functions to load SFs, corrections
@@ -48,7 +49,7 @@ def load_Campaign(self):
     
     ## jet pt bins
     self.jetPtBins = collections.OrderedDict()
-    if "Kinematics" in self.tag:
+    if "Kinematics" in self.tag and "jetpt" not in self.tag:
         for trigger in self.triggerInfos:
             self.jetPtBins[trigger] = { 'jetPtRange' : self.triggerInfos[trigger]['jetPtRange'], 'trigger' : self.triggerInfos[trigger]['jetTrigger'] if 'Light' in self.tag else trigger }
     else:
@@ -124,9 +125,11 @@ def get_psweight(jetPtBins, ps_run_num, jetPtBin, run, luminosityBlock):
         psweight = ak.values_astype( psweight + (jetPtBins==ptBin)*pseval.evaluate(run, f"HLT_{ptbin_trigger}", ak.values_astype(luminosityBlock, np.float32)), float,)
     return psweight
 
-def get_kinematic_weight(jetPt, jetEta, method, campaign, dataset, level):
-    kineval = correctionlib.CorrectionSet.from_file( f"src/BTVNanoCommissioning/data/KinematicWeights/{campaign}/{method}_{dataset}_{level}.json" )
-    return kineval.evaluate(jetPt, jetEta)
+def get_kinematic_weight(jetPt, jetEta, method, campaign, sample, level):
+    ext = extractor()
+    ext.add_weight_sets([f"* * src/BTVNanoCommissioning/data/KinematicWeights/{campaign}/{method}_{sample}_{level}.root"])
+    ext.finalize()
+    return ext.make_evaluator()["kinematicWeights"](jetPt, jetEta)
 
 class NanoProcessor(processor.ProcessorABC):
     def __init__(
@@ -335,11 +338,10 @@ class NanoProcessor(processor.ProcessorABC):
             weights.add("gluonSplitting", gluonSplitting, gluonSplittingUp, gluonSplittingDown)
             # b-hadron fragmentation
             bHadronID = ak.values_astype( -1*(ak.num(lastBHadron)==0) + 1.0*(ak.num(lastBHadron)>0), int,)
-        if "." in self.tag and (not isRealData or "Light" in self.tag): # Kinematic corrections
-            dataset = "Jet" if isRealData else "QCD" if "Light" in self.tag else "QCDMu"
-            #for level in [ self.tag.split(".",1)[-1].replace("."+self.tag.split(".",1)[-1].split(".",x)[x],"") for x in range(len(opt.self.split("."))-1) ]:
-            for level in [ ".".join( self.tag.split(".")[1:x] for x in range(2,len(opt.self.split("."))+1) ) ]:
-                weight.add(level.split(".")[-1], get_kinematic_weight(pruned_ev.JetSel.pt, pruned_ev.JetSel.eta, self._method, self._year+"_"+self._campaign, dataset, level))
+        if "-" in self.tag and (not isRealData or "Light" in self.tag): # Kinematic corrections
+            sample = "Jet" if isRealData else "QCD" if "Light" in self.tag else "QCDMu"
+            for level in [ "-".join( self.tag.split("-")[1:x] ) for x in range(2,len(self.tag.split("-"))+1) ]:
+                weights.add(level.split("-")[-1], get_kinematic_weight(pruned_ev.SelJet.pt, pruned_ev.SelJet.eta, self._method, self._year+"_"+self._campaign, sample, level))
 
         # Configure systematics
         if shift_name is None:
