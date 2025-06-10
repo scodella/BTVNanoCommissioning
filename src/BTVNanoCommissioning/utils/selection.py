@@ -391,6 +391,59 @@ btag_wp_dict = {
             },
         },
     },
+    "2024_Summer24": {
+        "DeepFlav": {
+            "b": {
+                "No": 0.0,
+                "L": 0.048,
+                "M": 0.2435,
+                "T": 0.6563,
+                "XT": 0.7671,
+                "XXT": 0.9483,
+            },
+            "c": {
+                "No": [0.0, 0.0],
+                "L": [0.042, 0.242],  # CvL, then CvB
+                "M": [0.102, 0.328],
+                "T": [0.250, 0.267],
+                "XT": [0.371, 0.444],
+            },
+        },
+        "UParTAK4": {
+            "b": {
+                "No": 0.0,
+                "L": 0.0683,
+                "M": 0.3494,
+                "T": 0.7994,
+                "XT": 0.8877,
+                "XXT": 0.9883,
+            },
+            "c": {
+                "No": [0.0, 0.0],
+                "L": [0.038, 0.091],
+                "M": [0.109, 0.157],
+                "T": [0.308, 0.116],
+                "XT": [0.469, 0.281],
+            },
+        },
+        "PNet": {
+            "b": {
+                "No": 0.0,
+                "L": 0.0359,
+                "M": 0.1919,
+                "T": 0.6133,
+                "XT": 0.7544,
+                "XXT": 0.9688,
+            },
+            "c": {
+                "No": [0.0, 0.0],
+                "L": [0.052, 0.228],
+                "M": [0.149, 0.358],
+                "T": [0.436, 0.303],
+                "XT": [0.634, 0.5552],
+            },
+        },
+    },
 }
 
 import os, correctionlib
@@ -603,6 +656,26 @@ met_filters = {
         ],
     },
     "Summer23BPix": {
+        "data": [
+            "goodVertices",
+            "globalSuperTightHalo2016Filter",
+            "EcalDeadCellTriggerPrimitiveFilter",
+            "BadPFMuonFilter",
+            "BadPFMuonDzFilter",
+            "hfNoisyHitsFilter",
+            "eeBadScFilter",
+        ],
+        "mc": [
+            "goodVertices",
+            "globalSuperTightHalo2016Filter",
+            "EcalDeadCellTriggerPrimitiveFilter",
+            "BadPFMuonFilter",
+            "BadPFMuonDzFilter",
+            "hfNoisyHitsFilter",
+            "eeBadScFilter",
+        ],
+    },
+    "Summer24": {
         "data": [
             "goodVertices",
             "globalSuperTightHalo2016Filter",

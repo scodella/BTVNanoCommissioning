@@ -427,7 +427,7 @@ def histogrammer(events, workflow, year="2022", campaign="Summer22"):
             )
     elif "workingPoints" in workflow:
         obj_list = []
-        btagdisc_axis = Hist.axis.Regular(11000, 0, 1.1, name="btagdisc", label="b-tagging discriminant")
+        btagdisc_axis = Hist.axis.Regular(11000, 0., 1.1, name="btagdisc", label="b-tagging discriminant")
         for tagger in btag_wp_dict[year+"_"+campaign]:
             _hist_dict["btagdisc_"+tagger] = Hist.Hist(syst_axis, flav_axis, btagdisc_axis, Hist.storage.Weight())
         return _hist_dict
@@ -745,7 +745,12 @@ def histo_writter(pruned_ev, output, weights, systematics, isSyst, SF_map):
     # Reduce the jet to the correct dimension in the plot
     nj = 4 if "jet4" in output.keys() else 2 if "jet2" in output.keys() else 1
     pruned_ev.SelJet = pruned_ev.SelJet if nj == 1 else pruned_ev.SelJet[:, :nj]
-    if "var" in str(ak.type(pruned_ev.SelJet.pt)) and nj == 1:
+    isWP = False
+    for histname in output.keys():
+        if "btagdisc_" in histname:
+            isWP = True
+            break
+    if "var" in str(ak.type(pruned_ev.SelJet.pt)) and nj == 1 and not isWP:
         pruned_ev.SelJet = pruned_ev.SelJet[:, 0]
     if "hadronFlavour" in pruned_ev.SelJet.fields:
         isRealData = False
@@ -973,7 +978,8 @@ def histo_writter(pruned_ev, output, weights, systematics, isSyst, SF_map):
                         weight=weights.partial_weight(exclude=exclude_btv),
                     )
             if "btagdisc_" in histname:
-                output[histname].fill(syst, flav=genflavor, btagdisc=pruned_ev.SelJet["btag"+histname.split("_")[1]+"B"], weight=weight)
+                output[histname].fill(syst, flav=flatten(pruned_ev.SelJet["hadronFlavour"]), btagdisc=flatten(pruned_ev.SelJet["btag"+histname.split("_")[1]+"B"]), weight=flatten(ak.broadcast_arrays(weight,pruned_ev.SelJet["pt"],)[0]))
+                #output[histname].fill(syst, flav=flatten(genflavor), btagdisc=flatten(pruned_ev.SelJet["btag"+histname.split("_")[1]+"B"]), weight=flatten(ak.broadcast_arrays(weight,pruned_ev.SelJet["pt"],)[0]))
             if "jetPtBin" in pruned_ev.fields:
                 if "nPV"==histname:
                     output["nPV"].fill(syst, ptbin=pruned_ev["jetPtBin"], npv=pruned_ev.PV.npvsGood, weight=weight)
@@ -987,9 +993,9 @@ def histo_writter(pruned_ev, output, weights, systematics, isSyst, SF_map):
                     output["muopt"].fill(syst, ptbin=pruned_ev["jetPtBin"], muopt=pruned_ev.SelMuo.pt, weight=weight)
                 elif "ptrel_" in histname:
                     if "taggedAwayJet" in pruned_ev.fields:
-                        output[histname].fill(syst, ptbin=pruned_ev["jetPtBin"], flav=genflavor, ptrel=pruned_ev["ptrel"], btagwp=pruned_ev[histname.split("_")[1]], tagawj=pruned_ev["taggedAwayJet"], weight=weight)
+                        output[histname].fill(syst=syst, ptbin=pruned_ev["jetPtBin"], flav=genflavor, ptrel=pruned_ev["ptrel"], btagwp=pruned_ev[histname.split("_")[1]], tagawj=pruned_ev["taggedAwayJet"], weight=weight)
                     else:
-                        output[histname].fill(syst, ptbin=pruned_ev["jetPtBin"], flav=genflavor, ptrel=pruned_ev["ptrel"], btagwp=pruned_ev[histname.split("_")[1]], weight=weight)
+                        output[histname].fill(syst=syst, ptbin=pruned_ev["jetPtBin"], flav=genflavor, ptrel=pruned_ev["ptrel"], btagwp=pruned_ev[histname.split("_")[1]], weight=weight)
                 elif "ptrel"==histname:
                     output["ptrel"].fill(syst, ptbin=pruned_ev["jetPtBin"], flav=genflavor, ptrel=pruned_ev["ptrel"], weight=weight)
 

@@ -37,6 +37,7 @@ predefined_sample = {
             "QCD_PT-80to120_MuEnrichedPt5_TuneCP5_13p6TeV_pythia8",
         ],
     },
+    "workingPoints": { "data": [], "MC": [ "QCD_Bin-PT-80to120_TuneCP5_13p6TeV_pythia8" ] },
     "ctag_DY_sf": {
         "data": ["Muon0", "Muon1"],
         "MC": ["DYto2L-2Jets_MLL-50_TuneCP5_13p6TeV_amcatnloFXFX-pythia8"],

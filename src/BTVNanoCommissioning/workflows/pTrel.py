@@ -4,6 +4,7 @@ import uproot
 from coffea import processor
 from coffea.lookup_tools import extractor
 from coffea.analysis_tools import Weights
+from BTVNanoCommissioning.helpers.BTA_helper import get_hadron_mass
 
 # functions to load SFs, corrections
 from BTVNanoCommissioning.utils.correction import (
@@ -131,6 +132,30 @@ def get_kinematic_weight(jetPt, jetEta, method, campaign, sample, level):
     ext.finalize()
     return ext.make_evaluator()["kinematicWeights"](jetPt, jetEta)
 
+def get_bfragmentation_weight(xB, genJetPt, campaign, shift=False):
+    ext = extractor()
+    ext.add_weight_sets([f"* * src/BTVNanoCommissioning/data/BFragmentation/bfragweights_vs_pt.root"])
+    ext.finalize()
+    passJet = ak.all(xB<1)*ak.all(genJetPt>=30)
+    failJet = ak.full_like(xB, 1) - passJet
+    bfragweight     = ak.values_astype( passJet*(ext.make_evaluator()["fragCP5BL"](xB, genJetPt))     + failJet, float,)
+    bfragweightUp   = ak.values_astype( passJet*(ext.make_evaluator()["fragCP5BLup"](xB, genJetPt))   + failJet, float,)
+    bfragweightDown = ak.values_astype( passJet*(ext.make_evaluator()["fragCP5BLdown"](xB, genJetPt)) + failJet, float,)
+    if shift: 
+        return bfragweight, bfragweightUp, bfragweightDown
+    else:
+        return ak.full_like(xB, 1.), bfragweightUp/bfragweight, bfragweightDown/bfragweight
+
+def get_decay_weight(bHadronId, campaign):
+    ext = extractor()      
+    ext.add_weight_sets([f"* * src/BTVNanoCommissioning/data/BFragmentation/bdecayweights.root"])
+    ext.finalize()
+    failJet = ak.all(bHadronId!=511)*ak.all(bHadronId!=521)*ak.all(bHadronId!=531)*ak.all(bHadronId!=5122)
+    passJet = ak.full_like(bHadronId, 1) - failJet
+    #bdecayweightUp   = ak.values_astype( (passJet)*(ext.make_evaluator()["semilepbrup"](bHadronId))   + failJet, float,)
+    #bdecayweightDown = ak.values_astype( (passJet)*(ext.make_evaluator()["semilepbrdown"](bHadronId)) + failJet, float,)
+    return ak.full_like(bHadronId, 1.), ak.full_like(bHadronId, 1.1), ak.full_like(bHadronId, 0.9) #decayweightUp, bdecayweightDown
+
 class NanoProcessor(processor.ProcessorABC):
     def __init__(
         self,
@@ -154,6 +179,11 @@ class NanoProcessor(processor.ProcessorABC):
         self.tag = selectionModifier
         ## Load corrections
         self.SF_map = load_SF(self._year, self._campaign)
+        for sfm in list(self.SF_map.keys()):
+            if sfm!="campaign" and sfm!="PU":
+                del self.SF_map[sfm]
+        #if 'JME' in self.SF_map:
+        #  del self.SF_map['JME'] #'campaign', 'PU', 'JME', 'jetveto', 'MUO_cfg', 'EGM_cfg', 'MUO', 'EGM'
         load_Campaign(self) 
 
     @property
@@ -164,7 +194,7 @@ class NanoProcessor(processor.ProcessorABC):
     def process(self, events):
         events = missing_branch(events)
         shifts = common_shifts(self, events)
-
+        
         return processor.accumulate(
             self.process_shift(update(events, collections), name)
             for collections, name in shifts
@@ -208,7 +238,7 @@ class NanoProcessor(processor.ProcessorABC):
  
         if "workingPoints" in self.tag:
 
-            jet_sel = ak.fill_none( (events.Jet.pt>=30.) & (abs(events.Jet.eta)<2.5) & (events.Jet.jetId>=4), False, axis=-1 )
+            jet_sel = ak.fill_none( (events.Jet.pt>=30.) & (abs(events.Jet.eta)<2.5) & (jet_id(events, self._campaign)), False, axis=-1 )
             event_jet = events.Jet[ jet_sel ]
             
             req_sel = (ak.num(event_jet.pt)>0 & ak.values_astype(events.PV.npvs>0, np.int32))
@@ -317,7 +347,7 @@ class NanoProcessor(processor.ProcessorABC):
         if isRealData: # Prescales
             isValidated = False
             if isValidated: weights.add("psweight", get_psweight(self.jetPtBins, self.ps_run_num, pruned_ev["jetPtBin"], pruned_ev.run, pruned_ev.luminosityBlock))
-        elif "Light" not in self.tag:
+        elif "Templates" in self.tag and "Light" not in self.tag:
             is_heavy_hadron = lambda p, pid: (abs(p.pdgId) // 100 == pid) | ( abs(p.pdgId) // 1000 == pid )
             sel_bhadrons = is_heavy_hadron(pruned_ev.GenPart, 5) & (pruned_ev.GenPart.hasFlags("isLastCopy")) & (ak.all(pruned_ev.GenPart.metric_table(pruned_ev.SelJet)<0.5,axis=2))
             bhadrons = pruned_ev.GenPart[sel_bhadrons]
@@ -325,7 +355,7 @@ class NanoProcessor(processor.ProcessorABC):
                                 "eta": bhadrons.eta,
                                 "phi": bhadrons.phi,
                                 "pdgID": bhadrons.pdgId,
-                                #"mass": get_hadron_mass(bhadrons.pdgId),
+                                "mass": get_hadron_mass(bhadrons.pdgId),
                                 "hasBdaughter": ak.values_astype(
                                    ak.any(is_heavy_hadron(bhadrons.children, 5), axis=-1), int
                                  ),  # B hadrons with B-daughters not removed
@@ -333,11 +363,18 @@ class NanoProcessor(processor.ProcessorABC):
             lastBHadron = BHadron[ BHadron.hasBdaughter==0 ]
             # Gluon splitting
             gluonSplitting     = ak.values_astype( 1.0*(ak.num(lastBHadron)<2) + 1.0*(ak.num(lastBHadron)>=2), float,)
-            gluonSplittingUp   = ak.values_astype( 1.0*(ak.num(lastBHadron)<2) + 0.5*(ak.num(lastBHadron)>=2), float,)
-            gluonSplittingDown = ak.values_astype( 1.0*(ak.num(lastBHadron)<2) + 1.5*(ak.num(lastBHadron)>=2), float,)
+            gluonSplittingUp   = ak.values_astype( 1.0*(ak.num(lastBHadron)<2) + 1.5*(ak.num(lastBHadron)>=2), float,)
+            gluonSplittingDown = ak.values_astype( 1.0*(ak.num(lastBHadron)<2) + 0.5*(ak.num(lastBHadron)>=2), float,)
             weights.add("gluonSplitting", gluonSplitting, gluonSplittingUp, gluonSplittingDown)
             # b-hadron fragmentation
-            bHadronID = ak.values_astype( -1*(ak.num(lastBHadron)==0) + 1.0*(ak.num(lastBHadron)>0), int,)
+            genJetPt = ak.values_astype( ak.sum(pruned_ev.GenJet.pt*ak.all(pruned_ev.GenJet.metric_table(pruned_ev.SelJet)<0.5,axis=2),axis=-1), float,)
+            xB = ak.values_astype( (ak.num(BHadron)>0)*ak.sum(BHadron.pT*(BHadron.mass==ak.max(BHadron.mass, axis=-1))/genJetPt,axis=-1), float,)
+            #xB = ak.values_astype( (ak.num(BHadron)>0)*BHadron.pT*(BHadron.mass==ak.max(BHadron.mass, axis=-1))/genJetPt, float,)
+            bfragweight, bfragweightUp, bfragweightDown = get_bfragmentation_weight(xB, genJetPt, self._year+"_"+self._campaign) 
+            weights.add("bfragmentation", bfragweight, bfragweightUp, bfragweightDown)
+            bHadronId = ak.values_astype( -1*(ak.num(lastBHadron)!=1) + (ak.num(lastBHadron)==1)*ak.sum(lastBHadron.pdgID, axis=-1), float,)
+            bdecayweight, bdecayweightUp, bdecayweightDown = get_decay_weight(bHadronId, self._year+"_"+self._campaign)
+            weights.add("bdecay", bdecayweight, bdecayweightUp, bdecayweightDown)
         if "-" in self.tag and (not isRealData or "Light" in self.tag): # Kinematic corrections
             sample = "Jet" if isRealData else "QCD" if "Light" in self.tag else "QCDMu"
             for level in [ "-".join( self.tag.split("-")[1:x] ) for x in range(2,len(self.tag.split("-"))+1) ]:
