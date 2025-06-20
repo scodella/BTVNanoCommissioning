@@ -245,7 +245,23 @@ class NanoProcessor(processor.ProcessorABC):
 
         elif "Light" in self.tag:
 
-            jet_sel = (jet_id(events, self._campaign))
+            trkj = events.JetPFCands[
+                (events.JetPFCands.pf.trkQuality != 0) & (events.JetPFCands.pt > 1.0)
+            ]
+
+            trkj = trkj[
+                (trkj.pf.trkHighPurity == 1)
+                & (trkj.pf.trkAlgo != 9)
+                & (trkj.pf.trkAlgo != 10)
+                & (trkj.pt > 5.0)
+                & (trkj.pf.numberOfHits >= 11)
+                & (trkj.pf.numberOfPixelHits >= 2)
+                & (trkj.pf.trkChi2 < 10)
+                & (trkj.pf.lostOuterHits <= 2)
+                & (trkj.pf.dz < 1.0)
+            ]
+            trk_sel = ( (events.PFCands.trkPt>5.) & (abs(events.PFCands.trkEta)<2.4) )
+            jet_sel = ak.fill_none( (events.Jet.pt>=20.) & (events.Jet.pt<1000.) & (abs(events.Jet.eta)<2.5) & (jet_id(events, self._campaign)), False, axis=-1 )
             event_jet = events.Jet[jet_sel]
             req_sel = ak.num(event_jet) >= 1
 
@@ -297,7 +313,7 @@ class NanoProcessor(processor.ProcessorABC):
         else:
 
             if "Light" in self.tag:
-                pruned_ev["SelJet"] = event_jet[event_level][:, 0]
+                pruned_ev["SelJet"] = event_jet[event_level]
 
             else:
                 pruned_ev["SelMuo"] = event_softmu[event_level][:, 0]
@@ -323,12 +339,13 @@ class NanoProcessor(processor.ProcessorABC):
                 pruned_ev["jetPtBin"] = ak.values_astype( pruned_ev["jetPtBin"]*(pruned_ev["SelJet"].pt<pthat_safety_cut(self.ptHatSafetyCuts, pruned_ev.Generator.binvar)), int,)
 
             if "Kinematics" in self.tag:
-                pruned_ev["muJetDR"] = pruned_ev.SelMuo.delta_r(pruned_ev.SelJet)
                 pruned_ev["PV"] = events.PV[event_level]
+                if "Light" not in self.tag:
+                    pruned_ev["muJetDR"] = pruned_ev.SelMuo.delta_r(pruned_ev.SelJet)
 
             elif "Templates" in self.tag:
-                pruned_ev["ptrel"] = pruned_ev.SelMuo.cross(pruned_ev.SelJet).p/pruned_ev.SelJet.p
                 if "Light" not in self.tag:
+                    pruned_ev["ptrel"] = pruned_ev.SelMuo.cross(pruned_ev.SelJet).p/pruned_ev.SelJet.p
                     wp_dict_campaign = btag_wp_dict[self._year+"_"+self._campaign]
                     for tagger in wp_dict_campaign:
                         pruned_ev[tagger] = ak.zeros_like(pruned_ev["SelJet"].pt)
