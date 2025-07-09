@@ -439,9 +439,9 @@ def histogrammer(events, workflow, year="2022", campaign="Summer22"):
             _hist_dict["jetpt"] = Hist.Hist(syst_axis, ptbin_axis, jetpt_axis,  Hist.storage.Weight())
             jeteta_axis = Hist.axis.Regular(50, -2.5, 2.5, name="jeteta",label="#mu-jet #eta")
             _hist_dict["jeteta"] = Hist.Hist(syst_axis, ptbin_axis, jeteta_axis, Hist.storage.Weight())
-            npv_axis = Hist.axis.Integer(0, 100, name="npv", label="N PVs")
-            _hist_dict["nPV"] = Hist.Hist(syst_axis, ptbin_axis, npv_axis, Hist.storage.Weight())
             if "Light" not in workflow:
+                npv_axis = Hist.axis.Integer(0, 100, name="npv", label="N PVs")
+                _hist_dict["nPV"] = Hist.Hist(syst_axis, ptbin_axis, npv_axis, Hist.storage.Weight())
                 mujetdr_axis = Hist.axis.Regular(20, 0, 0.5, name="mujetdr", label="DeltaR")
                 _hist_dict["DR"] = Hist.Hist(syst_axis, ptbin_axis, mujetdr_axis, Hist.storage.Weight())
                 muopt_axis = Hist.axis.Regular(20, 0., 100., name="muopt", label="mu p_{T} [GeV]")
@@ -745,12 +745,13 @@ def histo_writter(pruned_ev, output, weights, systematics, isSyst, SF_map):
     # Reduce the jet to the correct dimension in the plot
     nj = 4 if "jet4" in output.keys() else 2 if "jet2" in output.keys() else 1
     pruned_ev.SelJet = pruned_ev.SelJet if nj == 1 else pruned_ev.SelJet[:, :nj]
-    isWP = False
+    useAllJets = False
+    if "jetPtBin" in pruned_ev.SelJet.fields: useAllJets = True
     for histname in output.keys():
         if "btagdisc_" in histname:
-            isWP = True
+            useAllJets = True
             break
-    if "var" in str(ak.type(pruned_ev.SelJet.pt)) and nj == 1 and not isWP:
+    if "var" in str(ak.type(pruned_ev.SelJet.pt)) and nj == 1 and not useAllJets:
         pruned_ev.SelJet = pruned_ev.SelJet[:, 0]
     if "hadronFlavour" in pruned_ev.SelJet.fields:
         isRealData = False
@@ -977,10 +978,20 @@ def histo_writter(pruned_ev, output, weights, systematics, isSyst, SF_map):
                         discr=seljet[histname.replace(f"_{i}", "")],
                         weight=weights.partial_weight(exclude=exclude_btv),
                     )
+            # pTrel and System8 histograms
             if "btagdisc_" in histname:
                 output[histname].fill(syst, flav=flatten(pruned_ev.SelJet["hadronFlavour"]), btagdisc=flatten(pruned_ev.SelJet["btag"+histname.split("_")[1]+"B"]), weight=flatten(ak.broadcast_arrays(weight,pruned_ev.SelJet["pt"],)[0]))
-                #output[histname].fill(syst, flav=flatten(genflavor), btagdisc=flatten(pruned_ev.SelJet["btag"+histname.split("_")[1]+"B"]), weight=flatten(ak.broadcast_arrays(weight,pruned_ev.SelJet["pt"],)[0]))
-            if "jetPtBin" in pruned_ev.fields:
+            elif "jetPtBin" in pruned_ev.SelJet.fields:
+                if "jetpt"==histname or "jeteta"==histname:
+                    jetweight = ak.values_astype( weight*pruned_ev.SelJet["kinWeight"], float, )
+                    if "jetpt"==histname:
+                        output["jetpt"].fill(syst, ptbin=flatten(pruned_ev.SelJet["jetPtBin"]), jetpt=flatten(pruned_ev.SelJet.pt), weight=flatten(jetweight))
+                    elif "jeteta"==histname:
+                        output["jeteta"].fill(syst, ptbin=flatten(pruned_ev.SelJet["jetPtBin"]), jeteta=flatten(pruned_ev.SelJet.eta), weight=flatten(jetweight))
+                elif "ptrel"==histname:
+                    trkweight = ak.values_astype( weight*pruned_ev.TrkInc["kinWeight"]/pruned_ev.TrkInc["nTrkInc"], float, )
+                    output["ptrel"].fill(syst, ptbin=flatten(pruned_ev.TrkInc.jetPtBin), ptrel=flatten(pruned_ev.TrkInc.ptrel), weight=flatten(trkweight))
+            elif "jetPtBin" in pruned_ev.fields:
                 if "nPV"==histname:
                     output["nPV"].fill(syst, ptbin=pruned_ev["jetPtBin"], npv=pruned_ev.PV.npvsGood, weight=weight)
                 elif "jetpt"==histname:
@@ -993,11 +1004,9 @@ def histo_writter(pruned_ev, output, weights, systematics, isSyst, SF_map):
                     output["muopt"].fill(syst, ptbin=pruned_ev["jetPtBin"], muopt=pruned_ev.SelMuo.pt, weight=weight)
                 elif "ptrel_" in histname:
                     if "taggedAwayJet" in pruned_ev.fields:
-                        output[histname].fill(syst=syst, ptbin=pruned_ev["jetPtBin"], flav=genflavor, ptrel=pruned_ev["ptrel"], btagwp=pruned_ev[histname.split("_")[1]], tagawj=pruned_ev["taggedAwayJet"], weight=weight)
+                        output[histname].fill(syst=syst, ptbin=pruned_ev["jetPtBin"], flav=pruned_ev.SelJet["hadronFlavour"], ptrel=pruned_ev["ptrel"], btagwp=pruned_ev[histname.split("_")[1]], tagawj=pruned_ev["taggedAwayJet"], weight=weight)
                     else:
-                        output[histname].fill(syst=syst, ptbin=pruned_ev["jetPtBin"], flav=genflavor, ptrel=pruned_ev["ptrel"], btagwp=pruned_ev[histname.split("_")[1]], weight=weight)
-                elif "ptrel"==histname:
-                    output["ptrel"].fill(syst, ptbin=pruned_ev["jetPtBin"], flav=genflavor, ptrel=pruned_ev["ptrel"], weight=weight)
+                        output[histname].fill(syst=syst, ptbin=pruned_ev["jetPtBin"], flav=pruned_ev.SelJet["hadronFlavour"], ptrel=pruned_ev["ptrel"], btagwp=pruned_ev[histname.split("_")[1]], weight=weight)
 
         if "dr_poslnegl" in output.keys():
             # DY histograms

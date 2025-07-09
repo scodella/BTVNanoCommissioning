@@ -4,6 +4,7 @@ import uproot
 from coffea import processor
 from coffea.lookup_tools import extractor
 from coffea.analysis_tools import Weights
+from coffea.nanoevents.methods import vector
 from BTVNanoCommissioning.helpers.BTA_helper import get_hadron_mass
 
 # functions to load SFs, corrections
@@ -52,7 +53,7 @@ def load_Campaign(self):
     self.jetPtBins = collections.OrderedDict()
     if "Kinematics" in self.tag and "jetpt" not in self.tag:
         for trigger in self.triggerInfos:
-            self.jetPtBins[trigger] = { 'jetPtRange' : self.triggerInfos[trigger]['jetPtRange'], 'trigger' : self.triggerInfos[trigger]['jetTrigger'] if 'Light' in self.tag else trigger }
+            self.jetPtBins[trigger] = { 'jetPtRange' : self.triggerInfos[trigger]['jetPtRange'], 'trigger' : trigger }
     else:
         jetPtEdges = [ 20, 30, 50, 70, 100, 140, 200, 300, 600, 1000, 1400 ]
         for jetPtEdge in range(len(jetPtEdges)-1):
@@ -62,11 +63,12 @@ def load_Campaign(self):
             for trigger in self.triggerInfos:
                 if jetPtEdges[jetPtEdge]>=self.triggerInfos[trigger]['jetPtRange'][0]:
                     if jetPtEdges[jetPtEdge+1]<=self.triggerInfos[trigger]['jetPtRange'][1]:
-                        self.jetPtBins[ptbin]['trigger'] = self.triggerInfos[trigger]['jetTrigger'] if 'Light' in self.tag else trigger
+                        self.jetPtBins[ptbin]['trigger'] = trigger
 
     ## Away jet
     self.btagAwayJetDiscriminant = "Bprob"
     self.btagAwayJetCut = 1.221 if "AwayJetDown" in self.tag else 5.134 if "AwayJetUp" in self.tag else 2.555
+    self.btagVetoCut = 1.221
 
     ## Muon selection
     self.muonKinBins = collections.OrderedDict()
@@ -111,10 +113,11 @@ def load_Campaign(self):
     elif self._year=="2023": self.ps_run_num = "366727_370790"
 
 def pthat_safety_cut(ptHatSafetyCuts, pthat): # This kind of sucks!!!
-    ptHatSafetyCut = ak.zeros_like(pthat)
+    evt_zeros = ak.zeros_like(pthat)
+    ptHatSafetyCut = evt_zeros
     for pthatbin in ptHatSafetyCuts:
         minpthat, maxpthat, jetptcut = float(pthatbin.split('to')[0]), float(pthatbin.split('to')[1]), ptHatSafetyCuts[pthatbin]
-        ptHatSafetyCut = ak.values_astype( ptHatSafetyCut + jetptcut*((pthat>=minpthat) & (pthat<maxpthat)), int,) 
+        ptHatSafetyCut = ak.where( (pthat>=minpthat) & (pthat<maxpthat), evt_zeros+jetptcut, ptHatSafetyCut )
     return ptHatSafetyCut                    
 
 def get_psweight(jetPtBins, ps_run_num, jetPtBin, run, luminosityBlock):
@@ -180,7 +183,7 @@ class NanoProcessor(processor.ProcessorABC):
         ## Load corrections
         self.SF_map = load_SF(self._year, self._campaign)
         for sfm in list(self.SF_map.keys()):
-            if sfm!="campaign" and sfm!="PU":
+            if sfm!="campaign" and sfm!="sPU":
                 del self.SF_map[sfm]
         #if 'JME' in self.SF_map:
         #  del self.SF_map['JME'] #'campaign', 'PU', 'JME', 'jetveto', 'MUO_cfg', 'EGM_cfg', 'MUO', 'EGM'
@@ -245,46 +248,44 @@ class NanoProcessor(processor.ProcessorABC):
 
         elif "Light" in self.tag:
 
-            trkj = events.JetPFCands[
-                (events.JetPFCands.pf.trkQuality != 0) & (events.JetPFCands.pt > 1.0)
-            ]
+            req_trg = HLT_helper(events, [ self.triggerInfos[trigger]["jetTrigger"] for trigger in self.triggerInfos ] )
 
-            trkj = trkj[
-                (trkj.pf.trkHighPurity == 1)
-                & (trkj.pf.trkAlgo != 9)
-                & (trkj.pf.trkAlgo != 10)
-                & (trkj.pt > 5.0)
-                & (trkj.pf.numberOfHits >= 11)
-                & (trkj.pf.numberOfPixelHits >= 2)
-                & (trkj.pf.trkChi2 < 10)
-                & (trkj.pf.lostOuterHits <= 2)
-                & (trkj.pf.dz < 1.0)
-            ]
-            trk_sel = ( (events.PFCands.trkPt>5.) & (abs(events.PFCands.trkEta)<2.4) )
-            jet_sel = ak.fill_none( (events.Jet.pt>=20.) & (events.Jet.pt<1000.) & (abs(events.Jet.eta)<2.5) & (jet_id(events, self._campaign)), False, axis=-1 )
-            event_jet = events.Jet[jet_sel]
-            req_sel = ak.num(event_jet) >= 1
+            trkj = events.JetPFCands[ (events.JetPFCands.pf.trkQuality!=0) & (events.JetPFCands.pt>1.0) ]
+            trkj = trkj[ (trkj.pf.trkHighPurity==1) & (trkj.pf.trkAlgo!=9) & (trkj.pf.trkAlgo!=10) & (trkj.pf.numberOfHits>=11) &  (trkj.pf.trkPt>5.) 
+                    & (trkj.pf.numberOfPixelHits>=2) & (trkj.pf.trkChi2<10) & (trkj.pf.lostOuterHits<=2) & (trkj.pf.dz<1.0) & (abs(trkj.pf.trkEta)<2.4) ]
+
+            tagged_jet = events.Jet[ ak.fill_none( (events.Jet.pt>=20.) & (abs(events.Jet.eta)<2.5) & (jet_id(events, self._campaign)) & (events.Jet[self.btagAwayJetDiscriminant]>=self.btagVetoCut), False, axis=-1 ) ]
+            light_jet_sel = ak.fill_none( (events.Jet.pt>=20.) & (events.Jet.pt<1000.) & (abs(events.Jet.eta)<2.5) & (jet_id(events, self._campaign)) & (ak.count_nonzero(events.Jet.metric_table(tagged_jet)>=0.05,axis=2)==0), False, axis=-1 )
+            light_jet = events.Jet[light_jet_sel]
+
+            req_sel = (ak.num(light_jet)>=1) & (ak.num(trkj)>=1) & req_trg
 
         else:   
 
             req_trg = HLT_helper(events, [ trigger for trigger in self.triggerInfos ] )
 
-            event_softmu = events.Muon[ (events.Muon.pt>5.) & (events.Muon.mediumId>0.5) & (abs(events.Muon.eta)<2.4) & (events.Muon.jetIdx>=0) ]
-            mujet_sel = ak.fill_none( (ak.all(events.Jet.metric_table(event_softmu)<0.5,axis=2)) & (events.Jet.pt>=20.) & (events.Jet.pt<1000.) & (abs(events.Jet.eta)<2.5) & (events.Jet.jetId>=4), False, axis=-1 )
+            mutrkj = events.JetPFCands[ (events.JetPFCands.pf.trkQuality!=0) & (events.JetPFCands.pt>2.0) & (abs(events.JetPFCands.pf.pdgId)==13) & (events.JetPFCands.pf.numberOfHits>=11) & (events.JetPFCands.pf.numberOfPixelHits>=2) & (events.JetPFCands.pf.trkChi2<10) ]
+            mucand = events.Muon[ (events.Muon.pt>5.) & (events.Muon.looseId>0.5) & (abs(events.Muon.eta)<2.4) & (events.Muon.jetIdx>=0) & (events.Muon.isGlobal) & (events.Muon.nStations>=2) ]
+            pair = ak.cartesian( [mutrkj, mucand], axis=1, nested=True )  # dim: (event, pfcand, mu)
+            matched = ( (pair["0"].pf.pdgId==pair["1"].pdgId) & (pair["0"].pf.delta_r(pair["1"])<0.01) & ((pair["0"].pt-pair["1"].pt)/pair["0"].pt<0.1) )
+            event_softmu = ak.firsts( pair["1"][matched], axis=2 )  # dim same with mutrkj: (event, matched-pfcand), None if not matching with a muon
+            #event_softmu = events.Muon[ (events.Muon.pt>5.) & (events.Muon.mediumId>0.5) & (abs(events.Muon.eta)<2.4) & (events.Muon.jetIdx>=0) ]
+
+            mujet_sel = ak.fill_none( (ak.all(events.Jet.metric_table(event_softmu)<0.5,axis=2)) & (events.Jet.pt>=20.) & (events.Jet.pt<1000.) & (abs(events.Jet.eta)<2.5) & (jet_id(events, self._campaign)), False, axis=-1 )
             event_mujet = events.Jet[ mujet_sel ]
 
             if self._method=="pTrel":
 
-                awayjet_sel = ak.fill_none( (ak.all(events.Jet.metric_table(event_mujet)>1.5,axis=2)) & (events.Jet.pt>=20.) & (abs(events.Jet.eta)<2.5) & (events.Jet.jetId>=4) & (events.Jet[self.btagAwayJetDiscriminant]>=self.btagAwayJetCut), False, axis=-1 )
+                awayjet_sel = ak.fill_none( (ak.all(events.Jet.metric_table(event_mujet)>1.5,axis=2)) & (events.Jet.pt>=20.) & (abs(events.Jet.eta)<2.5) & (jet_id(events, self._campaign)) & (events.Jet[self.btagAwayJetDiscriminant]>=self.btagAwayJetCut), False, axis=-1 )
                 event_awayjet = events.Jet[ awayjet_sel ]
-                emuljet_sel = ak.fill_none( (ak.all(events.Jet.metric_table(event_mujet)>0.05,axis=2)) & (events.Jet.pt>=20.) & (abs(events.Jet.eta)<2.5) & (events.Jet.jetId>=4), False, axis=-1 )
+                emuljet_sel = ak.fill_none( (ak.all(events.Jet.metric_table(event_mujet)>0.05,axis=2)) & (events.Jet.pt>=20.) & (abs(events.Jet.eta)<2.5) & (jet_id(events, self._campaign)), False, axis=-1 )
                 event_emuljet = events.Jet[ emuljet_sel ]
 
                 req_sel = (ak.num(event_softmu.pt)==1) & (ak.num(event_mujet.pt)==1) & (ak.num(event_awayjet.pt)==1) & req_trg
 
             elif self._method=="System8":
 
-                awayjet_sel = ak.fill_none( (ak.all(events.Jet.metric_table(event_mujet)>0.05,axis=2)) & (events.Jet.pt>=20.) & (abs(events.Jet.eta)<2.5) & (events.Jet.jetId>=4), False, axis=-1 )
+                awayjet_sel = ak.fill_none( (ak.all(events.Jet.metric_table(event_mujet)>0.05,axis=2)) & (events.Jet.pt>=20.) & (abs(events.Jet.eta)<2.5) & (jet_id(events, self._campaign)), False, axis=-1 )
                 event_awayjet = events.Jet[ awayjet_sel ]
 
                 req_sel = (ak.num(event_softmu.pt)==1) & (ak.num(event_mujet.pt)==1) & (ak.num(event_awayjet.pt)>=1) & req_trg
@@ -313,9 +314,50 @@ class NanoProcessor(processor.ProcessorABC):
         else:
 
             if "Light" in self.tag:
-                pruned_ev["SelJet"] = event_jet[event_level]
+
+                light_jets = light_jet[event_level]
+                away_jet_cand = events.Jet[ ak.fill_none( (events.Jet.pt>=20.) & (abs(events.Jet.eta)<2.5) & (jet_id(events, self._campaign)), False, axis=-1 ) ]
+                away_jet = away_jet_cand[event_level]
+                trkj_evt = trkj[event_level]
+                trkj_evt["eta"] = trkj_evt.pf.trkEta
+                trkj_evt["phi"] = trkj_evt.pf.trkPhi
+
+                jet_zeros = ak.zeros_like(light_jets.pt, dtype=int)
+                light_jets["jetPtBin"] = jet_zeros
+                light_jets["nTrkInc"] = jet_zeros
+                light_jets["kinWeight"] = ak.ones_like(light_jets.pt)
+                for iptbin, ptbin in enumerate(self.jetPtBins):
+                    triggerCut = ak.values_astype( HLT_helper(pruned_ev, [ self.triggerInfos[self.jetPtBins[ptbin]["trigger"]]["jetTrigger"] ] ), int,)
+                    minPtCut, maxPtCut = float(self.jetPtBins[ptbin]["jetPtRange"][0]), float(self.jetPtBins[ptbin]["jetPtRange"][1])
+                    awayPtCut = float(self.triggerInfos[self.jetPtBins[ptbin]["trigger"]]["ptAwayJet"])
+                    emulPtCut = float(self.triggerInfos[self.jetPtBins[ptbin]["trigger"]]["ptTriggerEmulation"])
+                    muPtCut, muDRCut = self.jetPtBins[ptbin]["muPtCut"], self.jetPtBins[ptbin]["muDRCut"]
+                    light_jets["jetPtBin"] = ak.where( (triggerCut) & (light_jets.pt>=minPtCut) & (light_jets.pt<maxPtCut) & (ak.count_nonzero(light_jets.metric_table(away_jet[away_jet.pt>=awayPtCut])>=1.5,axis=2)>=1) & (ak.count_nonzero(light_jets.metric_table(away_jet[away_jet.pt>=emulPtCut])>=0.05,axis=2)>=1) & (ak.count_nonzero(light_jets.metric_table(trkj_evt[trkj_evt.pf.trkPt>=muPtCut])<=muDRCut,axis=2)>=1), jet_zeros+1+iptbin, light_jets["jetPtBin"] )
+                    light_jets["nTrkInc"] = ak.where( (light_jets.pt>=minPtCut) & (light_jets.pt<maxPtCut), ak.count_nonzero(light_jets.metric_table(trkj_evt[trkj_evt.pf.trkPt>=muPtCut])<=muDRCut,axis=2), light_jets["nTrkInc"])
+
+                if not isRealData:
+                    light_jets["jetPtBin"] = ak.where( light_jets.pt<pthat_safety_cut(self.ptHatSafetyCuts, pruned_ev.Generator.binvar), light_jets["jetPtBin"], jet_zeros )
+
+                if "Templates" in self.tag:
+
+                    pair = ak.cartesian( [light_jets, trkj_evt], axis=1, nested=True )  # dim: (event, jet, pfcand)
+                    matched = (pair["0"].delta_r(pair["1"].pf)<0.5) #& (pair["0"].pt_orig == pair["1"].jet.pt)
+                    trkj_jetbased = pair["1"][matched]  # dim: (event, jet, pfcand)
+
+                    vec = ak.zip( {"pt": trkj_jetbased.pf.trkPt, "eta": trkj_jetbased.pf.trkEta, "phi": trkj_jetbased.pf.trkPhi, "mass": trkj_jetbased.pf.mass,}, 
+                             behavior=vector.behavior, with_name="PtEtaPhiMLorentzVector", )
+                    trkj_jetbased["ptrel"] = (vec.subtract(light_jets)).cross(light_jets).p/light_jets.p
+                    
+                    trk_zeros = ak.zeros_like(trkj_jetbased.ptrel, dtype=int)
+                    trkj_jetbased["jetPtBin"] = light_jets["jetPtBin"]
+                    trkj_jetbased["nTrkInc"] = light_jets["nTrkInc"]
+                    for iptbin, ptbin in enumerate(self.jetPtBins):
+                        minPtCut, maxPtCut = float(self.jetPtBins[ptbin]["jetPtRange"][0]), float(self.jetPtBins[ptbin]["jetPtRange"][1])
+                        muPtCut, muDRCut = self.jetPtBins[ptbin]["muPtCut"], self.jetPtBins[ptbin]["muDRCut"]
+                        trkj_jetbased["jetPtBin"] = ak.where( (light_jets.pt>=minPtCut) & (light_jets.pt<maxPtCut) & ((trkj_jetbased.pf.trkPt<muPtCut) | (vec.delta_r(light_jets)>muDRCut)), trk_zeros, trkj_jetbased["jetPtBin"] )
 
             else:
+
                 pruned_ev["SelMuo"] = event_softmu[event_level][:, 0]
                 pruned_ev["SelJet"] = event_mujet[event_level][:, 0]
                 pruned_ev["AwayJet"] = event_awayjet[event_level][:, 0]
@@ -324,27 +366,25 @@ class NanoProcessor(processor.ProcessorABC):
 
                 pruned_ev["jetPtBin"] = ak.zeros_like(pruned_ev["SelJet"].pt)
                 for iptbin, ptbin in enumerate(self.jetPtBins):
-                    triggerCut = ak.values_astype( HLT_helper(pruned_ev, [ self.jetPtBins[ptbin]['trigger'] ] ), int,)
-                    minPtCut, maxPtCut = float(self.jetPtBins[ptbin]['jetPtRange'][0]), float(self.jetPtBins[ptbin]['jetPtRange'][1])
-                    awayPtCut = float(self.triggerInfos[self.jetPtBins[ptbin]['trigger']]['ptAwayJet'])
+                    triggerCut = ak.values_astype( HLT_helper(pruned_ev, [ self.jetPtBins[ptbin]["trigger"] ] ), int,)
+                    minPtCut, maxPtCut = float(self.jetPtBins[ptbin]["jetPtRange"][0]), float(self.jetPtBins[ptbin]["jetPtRange"][1])
+                    awayPtCut = float(self.triggerInfos[self.jetPtBins[ptbin]["trigger"]]["ptAwayJet"])
                     muPtCut, muDRCut = self.jetPtBins[ptbin]["muPtCut"], self.jetPtBins[ptbin]["muDRCut"]
 
                     if self._method=="pTrel":
-                        emulPtCut = float(self.triggerInfos[self.jetPtBins[ptbin]['trigger']]['ptTriggerEmulation'])
+                        emulPtCut = float(self.triggerInfos[self.jetPtBins[ptbin]["trigger"]]["ptTriggerEmulation"])
                         pruned_ev["jetPtBin"] = ak.values_astype( pruned_ev["jetPtBin"] + (iptbin+1)*triggerCut*((pruned_ev.SelJet.pt>=minPtCut) & (pruned_ev.SelJet.pt<maxPtCut) & (pruned_ev.AwayJet.pt>=awayPtCut) & (pruned_ev.EmulJet.pt>=emulPtCut) & (pruned_ev.SelMuo.pt>=muPtCut) & (pruned_ev.SelMuo.delta_r(pruned_ev.SelJet)<=muDRCut)), int,)
                     elif self._method=="System8":
                         pruned_ev["jetPtBin"] = ak.values_astype( pruned_ev["jetPtBin"] + (iptbin+1)*triggerCut*((pruned_ev.SelJet.pt>=minPtCut) & (pruned_ev.SelJet.pt<maxPtCut) & (pruned_ev.AwayJet.pt>=awayPtCut) & (pruned_ev.SelMuo.pt>=muPtCut) & (pruned_ev.SelMuo.delta_r(pruned_ev.SelJet)<=muDRCut)), int,)
 
-            if not isRealData:
-                pruned_ev["jetPtBin"] = ak.values_astype( pruned_ev["jetPtBin"]*(pruned_ev["SelJet"].pt<pthat_safety_cut(self.ptHatSafetyCuts, pruned_ev.Generator.binvar)), int,)
+                if not isRealData:
+                    pruned_ev["jetPtBin"] = ak.values_astype( pruned_ev["jetPtBin"]*(pruned_ev["SelJet"].pt<pthat_safety_cut(self.ptHatSafetyCuts, pruned_ev.Generator.binvar)), int,)
 
-            if "Kinematics" in self.tag:
-                pruned_ev["PV"] = events.PV[event_level]
-                if "Light" not in self.tag:
+                if "Kinematics" in self.tag:
+                    pruned_ev["PV"] = events.PV[event_level]
                     pruned_ev["muJetDR"] = pruned_ev.SelMuo.delta_r(pruned_ev.SelJet)
 
-            elif "Templates" in self.tag:
-                if "Light" not in self.tag:
+                elif "Templates" in self.tag:   
                     pruned_ev["ptrel"] = pruned_ev.SelMuo.cross(pruned_ev.SelJet).p/pruned_ev.SelJet.p
                     wp_dict_campaign = btag_wp_dict[self._year+"_"+self._campaign]
                     for tagger in wp_dict_campaign:
@@ -395,7 +435,16 @@ class NanoProcessor(processor.ProcessorABC):
         if "-" in self.tag and (not isRealData or "Light" in self.tag): # Kinematic corrections
             sample = "Jet" if isRealData else "QCD" if "Light" in self.tag else "QCDMu"
             for level in [ "-".join( self.tag.split("-")[1:x] ) for x in range(2,len(self.tag.split("-"))+1) ]:
-                weights.add(level.split("-")[-1], get_kinematic_weight(pruned_ev.SelJet.pt, pruned_ev.SelJet.eta, self._method, self._year+"_"+self._campaign, sample, level))
+                if sample=="QCDMu":
+                    weights.add(level.split("-")[-1], get_kinematic_weight(pruned_ev.SelJet.pt, pruned_ev.SelJet.eta, self._method, self._year+"_"+self._campaign, sample, level))
+                else:
+                    light_jets["kinWeight"] = ak.values_astype( light_jets["kinWeight"]*get_kinematic_weight(light_jets.pt, light_jets.eta, self._method, self._year+"_"+self._campaign, sample, level), float,)
+
+        if "Light" in self.tag:
+            pruned_ev["SelJet"] = light_jets
+            if "Templates" in self.tag:
+                trkj_jetbased["kinWeight"] = light_jets["kinWeight"]
+                pruned_ev["TrkInc"] = trkj_jetbased
 
         # Configure systematics
         if shift_name is None:
@@ -403,7 +452,7 @@ class NanoProcessor(processor.ProcessorABC):
         else:
             systematics = [shift_name]
         if not isRealData:
-            pruned_ev["weight"] = weights.weight()
+            #pruned_ev["weight"] = weights.weight()
             for ind_wei in weights.weightStatistics.keys():
                 pruned_ev[f"{ind_wei}_weight"] = weights.partial_weight(
                     include=[ind_wei]
