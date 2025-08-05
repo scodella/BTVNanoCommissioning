@@ -249,6 +249,7 @@ def getFilesFromDas(args):
                     ):
                         continue
                     # get first site in possible_sites
+                    if site not in sites_xrootd_prefix: continue
                     elif type(sites_xrootd_prefix[site]) == str:
                         xrd = sites_xrootd_prefix[site]
         else:
