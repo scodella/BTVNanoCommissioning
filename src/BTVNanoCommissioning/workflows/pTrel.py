@@ -111,6 +111,7 @@ def load_Campaign(self):
     ## prescale run range
     if self._year=="2022": self.ps_run_num = "355374_362760"
     elif self._year=="2023": self.ps_run_num = "366727_370790"
+    elif self._year=="2024": self.ps_run_num = "378985_386951"
 
 def pthat_safety_cut(ptHatSafetyCuts, pthat): # This kind of sucks!!!
     evt_zeros = ak.zeros_like(pthat)
@@ -183,7 +184,7 @@ class NanoProcessor(processor.ProcessorABC):
         ## Load corrections
         self.SF_map = load_SF(self._year, self._campaign)
         for sfm in list(self.SF_map.keys()):
-            if sfm!="campaign" and sfm!="sPU":
+            if sfm!="campaign" and sfm!="PU":
                 del self.SF_map[sfm]
         #if 'JME' in self.SF_map:
         #  del self.SF_map['JME'] #'campaign', 'PU', 'JME', 'jetveto', 'MUO_cfg', 'EGM_cfg', 'MUO', 'EGM'
