@@ -512,16 +512,19 @@ def histogrammer(events, workflow, year="2022", campaign="Summer22"):
         for obj in obj_list:
             # mujet pt passing tagger WPs
             if "mujet" in obj:
-                for tagger in btag_wp_dict[year + "_" + campaign].keys():
-                    for wp in btag_wp_dict[year + "_" + campaign][tagger]["c"].keys():
-                        if not "No" in wp:
-                            _hist_dict[f"{obj}_pt_{tagger}{wp}"] = Hist.Hist(
-                                syst_axis,
-                                flav_axis,
-                                osss_axis,
-                                pt_axis,
-                                Hist.storage.Weight(),
-                            )
+                if "cutbased" in workflow:
+                    for tagger in btag_wp_dict[year + "_" + campaign].keys():
+                        for wp in btag_wp_dict[year + "_" + campaign][tagger][
+                            "c"
+                        ].keys():
+                            if not "No" in wp:
+                                _hist_dict[f"{obj}_pt_{tagger}{wp}"] = Hist.Hist(
+                                    syst_axis,
+                                    flav_axis,
+                                    osss_axis,
+                                    pt_axis,
+                                    Hist.storage.Weight(),
+                                )
 
             if "jet" in obj or "soft_l" in obj:
                 if obj == "soft_l":
@@ -1097,8 +1100,8 @@ def histo_writter(pruned_ev, output, weights, systematics, isSyst, SF_map):
         # dilepton system histograms: DY workflow
         if "dilep" in pruned_ev.fields:
             output["dilep_pt"].fill(syst, flatten(pruned_ev.dilep.pt), weight=weight)
-            output["dilep_pt"].fill(syst, flatten(pruned_ev.dilep.eta), weight=weight)
-            output["dilep_pt"].fill(syst, flatten(pruned_ev.dilep.phi), weight=weight)
+            output["dilep_eta"].fill(syst, flatten(pruned_ev.dilep.eta), weight=weight)
+            output["dilep_phi"].fill(syst, flatten(pruned_ev.dilep.phi), weight=weight)
             output["dilep_mass"].fill(
                 syst, flatten(pruned_ev.dilep.mass), weight=weight
             )
