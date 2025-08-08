@@ -1,6 +1,7 @@
 import collections, awkward as ak, numpy as np
 import os
 import uproot
+import correctionlib
 from coffea import processor
 from coffea.lookup_tools import extractor
 from coffea.analysis_tools import Weights
@@ -121,13 +122,14 @@ def pthat_safety_cut(ptHatSafetyCuts, pthat): # This kind of sucks!!!
         ptHatSafetyCut = ak.where( (pthat>=minpthat) & (pthat<maxpthat), evt_zeros+jetptcut, ptHatSafetyCut )
     return ptHatSafetyCut                    
 
-def get_psweight(jetPtBins, ps_run_num, jetPtBin, run, luminosityBlock):
+def get_psweight(jetPtBins, ps_run_num, jetPtBin, run, luminosityBlock, triggerInfos=False):
     psweight = ak.zeros_like(jetPtBin)
-    for iptbin, ptbin in enumerate(self.jetPtBins):
+    for iptbin, ptbin in enumerate(jetPtBins):
         ptBin = ak.full_like(jetPtBin, iptbin+1)
-        ptbin_trigger = jetPtBins[ptbin]['trigger']
+        if triggerInfos: ptbin_trigger = triggerInfos[jetPtBins[ptbin]["trigger"]]["jetTrigger"]
+        else: ptbin_trigger = jetPtBins[ptbin]['trigger']
         pseval = correctionlib.CorrectionSet.from_file( f"src/BTVNanoCommissioning/data/Prescales/ps_weight_{ptbin_trigger}_run{ps_run_num}.json" )
-        psweight = ak.values_astype( psweight + (jetPtBins==ptBin)*pseval.evaluate(run, f"HLT_{ptbin_trigger}", ak.values_astype(luminosityBlock, np.float32)), float,)
+        psweight = ak.values_astype( psweight + (jetPtBin==ptBin)*pseval["prescaleWeight"].evaluate(run, f"HLT_{ptbin_trigger}", ak.values_astype(luminosityBlock, np.float32)), float,)
     return psweight
 
 def get_kinematic_weight(jetPt, jetEta, method, campaign, sample, level):
@@ -265,12 +267,20 @@ class NanoProcessor(processor.ProcessorABC):
 
             req_trg = HLT_helper(events, [ trigger for trigger in self.triggerInfos ] )
 
-            mutrkj = events.JetPFCands[ (events.JetPFCands.pf.trkQuality!=0) & (events.JetPFCands.pt>2.0) & (abs(events.JetPFCands.pf.pdgId)==13) & (events.JetPFCands.pf.numberOfHits>=11) & (events.JetPFCands.pf.numberOfPixelHits>=2) & (events.JetPFCands.pf.trkChi2<10) ]
-            mucand = events.Muon[ (events.Muon.pt>5.) & (events.Muon.looseId>0.5) & (abs(events.Muon.eta)<2.4) & (events.Muon.jetIdx>=0) & (events.Muon.isGlobal) & (events.Muon.nStations>=2) ]
-            pair = ak.cartesian( [mutrkj, mucand], axis=1, nested=True )  # dim: (event, pfcand, mu)
-            matched = ( (pair["0"].pf.pdgId==pair["1"].pdgId) & (pair["0"].pf.delta_r(pair["1"])<0.01) & ((pair["0"].pt-pair["1"].pt)/pair["0"].pt<0.1) )
-            event_softmu = ak.firsts( pair["1"][matched], axis=2 )  # dim same with mutrkj: (event, matched-pfcand), None if not matching with a muon
-            #event_softmu = events.Muon[ (events.Muon.pt>5.) & (events.Muon.mediumId>0.5) & (abs(events.Muon.eta)<2.4) & (events.Muon.jetIdx>=0) ]
+            softMuonStrategy = "BTAeasy"
+            if softMuonStrategy=="BTA": # crush on data
+                mutrkj = events.JetPFCands[ (events.JetPFCands.pf.trkQuality!=0) & (events.JetPFCands.pt>2.0) & (abs(events.JetPFCands.pf.pdgId)==13) & (events.JetPFCands.pf.numberOfHits>=11) & (events.JetPFCands.pf.numberOfPixelHits>=2) & (events.JetPFCands.pf.trkChi2<10) ]
+                mucand = events.Muon[ (events.Muon.pt>5.) & (events.Muon.looseId>0.5) & (abs(events.Muon.eta)<2.4) & (events.Muon.jetIdx>=0) & (events.Muon.isGlobal) & (events.Muon.nStations>=2) ]
+                pair = ak.cartesian( [mutrkj, mucand], axis=1, nested=True )  # dim: (event, pfcand, mu)
+                matched = ( (pair["0"].pf.pdgId==pair["1"].pdgId) & (pair["0"].pf.delta_r(pair["1"])<0.01) & ((pair["0"].pt-pair["1"].pt)/pair["0"].pt<0.1) )
+                event_softmu = ak.firsts( pair["1"][matched], axis=2 )  # dim same with mutrkj: (event, matched-pfcand), None if not matching with a muon
+            elif softMuonStrategy=="BTAeasy": 
+                mutrkj = events.JetPFCands[ (events.JetPFCands.pf.trkQuality!=0) & (events.JetPFCands.pt>2.0) & (abs(events.JetPFCands.pf.pdgId)==13) & (events.JetPFCands.pf.numberOfHits>=11) & (events.JetPFCands.pf.numberOfPixelHits>=2) & (events.JetPFCands.pf.trkChi2<10) ]
+                mutrkj["eta"] = mutrkj.pf.eta
+                mutrkj["phi"] = mutrkj.pf.phi
+                event_softmu = events.Muon[ (events.Muon.pt>5.) & (events.Muon.looseId>0.5) & (abs(events.Muon.eta)<2.4) & (events.Muon.jetIdx>=0) & (events.Muon.isGlobal) & (events.Muon.nStations>=2) & (ak.count_nonzero(events.Muon.metric_table(mutrkj)<0.01,axis=2)>=1) ]
+            elif softMuonStrategy=="pogMediumID":
+                event_softmu = events.Muon[ (events.Muon.pt>5.) & (events.Muon.mediumId>0.5) & (abs(events.Muon.eta)<2.4) & (events.Muon.jetIdx>=0) ]
 
             mujet_sel = ak.fill_none( (ak.all(events.Jet.metric_table(event_softmu)<0.5,axis=2)) & (events.Jet.pt>=20.) & (events.Jet.pt<1000.) & (abs(events.Jet.eta)<2.5) & (jet_id(events, self._campaign)), False, axis=-1 )
             event_mujet = events.Jet[ mujet_sel ]
@@ -387,6 +397,10 @@ class NanoProcessor(processor.ProcessorABC):
 
                 elif "Templates" in self.tag:   
                     pruned_ev["ptrel"] = pruned_ev.SelMuo.cross(pruned_ev.SelJet).p/pruned_ev.SelJet.p
+                    if isRealData:
+                        pruned_ev["jetFlavour"] = ak.zeros_like(pruned_ev["SelJet"].pt, dtype=int)
+                    else:
+                        pruned_ev["jetFlavour"] = pruned_ev["SelJet"].hadronFlavour
                     wp_dict_campaign = btag_wp_dict[self._year+"_"+self._campaign]
                     for tagger in wp_dict_campaign:
                         pruned_ev[tagger] = ak.zeros_like(pruned_ev["SelJet"].pt)
@@ -402,10 +416,16 @@ class NanoProcessor(processor.ProcessorABC):
         ####################
         # Configure SFs
         weights = weight_manager(pruned_ev, self.SF_map, self.isSyst)
-        if isRealData: # Prescales
-            isValidated = False
-            if isValidated: weights.add("psweight", get_psweight(self.jetPtBins, self.ps_run_num, pruned_ev["jetPtBin"], pruned_ev.run, pruned_ev.luminosityBlock))
-        elif "Templates" in self.tag and "Light" not in self.tag:
+        if "Light" in self.tag: sample = "Jet" if isRealData else "QCD"
+        else: sample = "BTagMu" if isRealData else "QCDMu"
+        # Prescales
+        if sample=="BTagMu": 
+            weights.add("psweight", get_psweight(self.jetPtBins, self.ps_run_num, pruned_ev["jetPtBin"], pruned_ev.run, pruned_ev.luminosityBlock))
+        elif sample=="Jet":
+            pass
+            #light_jets["kinWeight"] = ak.values_astype( light_jets["kinWeight"]*get_psweight(self.jetPtBins, self.ps_run_num, light_jets["jetPtBin"], pruned_ev.run, pruned_ev.luminosityBlock, self.triggerInfos), float,)
+        # b-jet templates uncertainties
+        elif sample=="QCDMu" and "Templates" in self.tag:
             is_heavy_hadron = lambda p, pid: (abs(p.pdgId) // 100 == pid) | ( abs(p.pdgId) // 1000 == pid )
             sel_bhadrons = is_heavy_hadron(pruned_ev.GenPart, 5) & (pruned_ev.GenPart.hasFlags("isLastCopy")) & (ak.all(pruned_ev.GenPart.metric_table(pruned_ev.SelJet)<0.5,axis=2))
             bhadrons = pruned_ev.GenPart[sel_bhadrons]
@@ -433,8 +453,8 @@ class NanoProcessor(processor.ProcessorABC):
             bHadronId = ak.values_astype( -1*(ak.num(lastBHadron)!=1) + (ak.num(lastBHadron)==1)*ak.sum(lastBHadron.pdgID, axis=-1), float,)
             bdecayweight, bdecayweightUp, bdecayweightDown = get_decay_weight(bHadronId, self._year+"_"+self._campaign)
             weights.add("bdecay", bdecayweight, bdecayweightUp, bdecayweightDown)
-        if "-" in self.tag and (not isRealData or "Light" in self.tag): # Kinematic corrections
-            sample = "Jet" if isRealData else "QCD" if "Light" in self.tag else "QCDMu"
+        # Kinematic corrections
+        if "-" in self.tag and sample!="BTagMu":
             for level in [ "-".join( self.tag.split("-")[1:x] ) for x in range(2,len(self.tag.split("-"))+1) ]:
                 if sample=="QCDMu":
                     weights.add(level.split("-")[-1], get_kinematic_weight(pruned_ev.SelJet.pt, pruned_ev.SelJet.eta, self._method, self._year+"_"+self._campaign, sample, level))

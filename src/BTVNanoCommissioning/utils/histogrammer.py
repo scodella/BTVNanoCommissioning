@@ -1007,9 +1007,9 @@ def histo_writter(pruned_ev, output, weights, systematics, isSyst, SF_map):
                     output["muopt"].fill(syst, ptbin=pruned_ev["jetPtBin"], muopt=pruned_ev.SelMuo.pt, weight=weight)
                 elif "ptrel_" in histname:
                     if "taggedAwayJet" in pruned_ev.fields:
-                        output[histname].fill(syst=syst, ptbin=pruned_ev["jetPtBin"], flav=pruned_ev.SelJet["hadronFlavour"], ptrel=pruned_ev["ptrel"], btagwp=pruned_ev[histname.split("_")[1]], tagawj=pruned_ev["taggedAwayJet"], weight=weight)
+                        output[histname].fill(syst=syst, ptbin=pruned_ev["jetPtBin"], flav=pruned_ev["jetFlavour"], ptrel=pruned_ev["ptrel"], btagwp=pruned_ev[histname.split("_")[1]], tagawj=pruned_ev["taggedAwayJet"], weight=weight)
                     else:
-                        output[histname].fill(syst=syst, ptbin=pruned_ev["jetPtBin"], flav=pruned_ev.SelJet["hadronFlavour"], ptrel=pruned_ev["ptrel"], btagwp=pruned_ev[histname.split("_")[1]], weight=weight)
+                        output[histname].fill(syst=syst, ptbin=pruned_ev["jetPtBin"], flav=pruned_ev["jetFlavour"], ptrel=pruned_ev["ptrel"], btagwp=pruned_ev[histname.split("_")[1]], weight=weight)
 
         if "dr_poslnegl" in output.keys():
             # DY histograms
