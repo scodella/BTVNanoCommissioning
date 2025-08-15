@@ -455,6 +455,8 @@ def histogrammer(events, workflow, year="2022", campaign="Summer22"):
                 if "pTrel" in workflow:
                     for tagger in btag_wp_dict[year+"_"+campaign]:
                         _hist_dict["ptrel_"+tagger] = Hist.Hist(syst_axis, ptbin_axis, flav_axis, ptrel_axis, btagwp_axis, Hist.storage.Weight())
+                    if len(list(btag_wp_dict[year+"_"+campaign].keys()))==1:
+                        _hist_dict["ptrel_bCorrector"] = Hist.Hist(syst_axis, ptbin_axis, flav_axis, ptrel_axis, btagwp_axis, Hist.storage.Weight())
                 elif "System8" in workflow:
                     tagawj_axis = Hist.axis.IntCategory([0, 1], name="tagawj", label="Tagged away jet")
                     for tagger in btag_wp_dict[year+"_"+campaign]:

@@ -71,6 +71,12 @@ def load_Campaign(self):
     self.btagAwayJetCut = 1.221 if "AwayJetDown" in self.tag else 5.134 if "AwayJetUp" in self.tag else 2.555
     self.btagVetoCut = 1.221
 
+    ## bCorrector
+    if len(list(btag_wp_dict[self._year+"_"+self._campaign].keys()))==1:
+        if self._campaign=="Summer24":
+            self.bCorrectorDiscriminant = "btagDeepFlavB" 
+            self.bCorrectorCut = 0.6708 
+
     ## Muon selection
     self.muonKinBins = collections.OrderedDict()
     if self._method=="pTrel":
@@ -407,6 +413,8 @@ class NanoProcessor(processor.ProcessorABC):
                         for wp in wp_dict_campaign[tagger]["b"]:
                             if wp!="No":
                                 pruned_ev[tagger] = ak.values_astype( pruned_ev[tagger] + (pruned_ev.SelJet["btag"+tagger+"B"]>wp_dict_campaign[tagger]["b"][wp]), int,)
+                    if self._method=="pTrel" and len(list(wp_dict_campaign.keys()))==1:
+                        bpruned_ev["bCorrector"] = ak.values_astype( (pruned_ev.SelJet[self.bCorrectorDiscriminant]>=self.bCorrectorCut), int,)
                     if self._method=="System8":
                         pruned_ev["taggedAwayJet"] = ak.values_astype( (pruned_ev.AwayJet[self.btagAwayJetDiscriminant]>=self.btagAwayJetCut), int,)
 
