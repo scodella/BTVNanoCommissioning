@@ -234,6 +234,10 @@ for index, discr in enumerate(var_set):
         allaxis["flav"] = sum
         SF_axis = allaxis
         noSF_axis = allaxis
+    if "ptbin" in collated["mc"][discr].axes.name:
+        allaxis["ptbin"] = sum
+        SF_axis = allaxis
+        noSF_axis = allaxis
     if "syst" in collated["mc"][discr].axes.name:
         allaxis["syst"] = "nominal"
         SF_axis = allaxis
