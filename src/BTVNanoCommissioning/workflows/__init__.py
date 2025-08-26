@@ -109,7 +109,7 @@ workflows["workingPoints"] = partial(PtRelSFbProcessor, selectionModifier="worki
 for dataset in [ "", "Light" ]:
     for step in [ "Kinematics", "Templates" ]:
         selection_list = [ "" ]
-        correction_list = [ "", "-jetpt", "-jetpt-jeteta" ]
+        correction_list = [ "", "-jetpt", "-jetpt-jeteta", "NoPS" ]
         if "Templates" in step:
             selection_list.extend([ "MuPtDown", "MuPtUp", "MuDRDown", "MuDRUp" ])
             if dataset=="": selection_list.extend([ "AwayJetDown" , "AwayJetUp" ])

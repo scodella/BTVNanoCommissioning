@@ -114,6 +114,11 @@ def load_Campaign(self):
         self.ptHatSafetyCuts = {  '15to20' :  60.,   '20to30' :  85.,   '30to50' : 120.,   '50to80' : 160.,  
                                  '80to120' : 220., '120to170' : 320., '170to300' : 440., '300to470' : 620., 
                                 '470to600' : 720., '600to800' : 920., '800to10000' : 999999. }
+        if int(self._year)>=2024:
+            self.ptHatSafetyCuts['170to300'] =  540.
+            self.ptHatSafetyCuts['300to470'] =  740.
+            self.ptHatSafetyCuts['470to600'] =  870.
+            self.ptHatSafetyCuts['600to800'] = 1000.
 
     ## prescale run range
     if self._year=="2022": self.ps_run_num = "355374_362760"
@@ -428,39 +433,45 @@ class NanoProcessor(processor.ProcessorABC):
         else: sample = "BTagMu" if isRealData else "QCDMu"
         # Prescales
         if sample=="BTagMu": 
-            weights.add("psweight", get_psweight(self.jetPtBins, self.ps_run_num, pruned_ev["jetPtBin"], pruned_ev.run, pruned_ev.luminosityBlock))
+            if "NoPS" not in self.tag:
+                weights.add("psweight", get_psweight(self.jetPtBins, self.ps_run_num, pruned_ev["jetPtBin"], pruned_ev.run, pruned_ev.luminosityBlock))
         elif sample=="Jet":
-            pass
-            #light_jets["kinWeight"] = ak.values_astype( light_jets["kinWeight"]*get_psweight(self.jetPtBins, self.ps_run_num, light_jets["jetPtBin"], pruned_ev.run, pruned_ev.luminosityBlock, self.triggerInfos), float,)
+            if "NoPS" not in self.tag:
+                light_jets["kinWeight"] = ak.values_astype( light_jets["kinWeight"]*get_psweight(self.jetPtBins, self.ps_run_num, light_jets["jetPtBin"], pruned_ev.run, pruned_ev.luminosityBlock, self.triggerInfos), float,)
+        elif sample=="QCD":
+            light_jets["kinWeight"] = ak.values_astype( light_jets["kinWeight"]*(light_jets["jetPtBin"]>=1), float,)
         # b-jet templates uncertainties
-        elif sample=="QCDMu" and "Templates" in self.tag:
-            is_heavy_hadron = lambda p, pid: (abs(p.pdgId) // 100 == pid) | ( abs(p.pdgId) // 1000 == pid )
-            sel_bhadrons = is_heavy_hadron(pruned_ev.GenPart, 5) & (pruned_ev.GenPart.hasFlags("isLastCopy")) & (ak.all(pruned_ev.GenPart.metric_table(pruned_ev.SelJet)<0.5,axis=2))
-            bhadrons = pruned_ev.GenPart[sel_bhadrons]
-            BHadron = ak.zip( { "pT": bhadrons.pt,
-                                "eta": bhadrons.eta,
-                                "phi": bhadrons.phi,
-                                "pdgID": bhadrons.pdgId,
-                                "mass": get_hadron_mass(bhadrons.pdgId),
-                                "hasBdaughter": ak.values_astype(
-                                   ak.any(is_heavy_hadron(bhadrons.children, 5), axis=-1), int
-                                 ),  # B hadrons with B-daughters not removed
-                               } )
-            lastBHadron = BHadron[ BHadron.hasBdaughter==0 ]
-            # Gluon splitting
-            gluonSplitting     = ak.values_astype( 1.0*(ak.num(lastBHadron)<2) + 1.0*(ak.num(lastBHadron)>=2), float,)
-            gluonSplittingUp   = ak.values_astype( 1.0*(ak.num(lastBHadron)<2) + 1.5*(ak.num(lastBHadron)>=2), float,)
-            gluonSplittingDown = ak.values_astype( 1.0*(ak.num(lastBHadron)<2) + 0.5*(ak.num(lastBHadron)>=2), float,)
-            weights.add("gluonSplitting", gluonSplitting, gluonSplittingUp, gluonSplittingDown)
-            # b-hadron fragmentation
-            genJetPt = ak.values_astype( ak.sum(pruned_ev.GenJet.pt*ak.all(pruned_ev.GenJet.metric_table(pruned_ev.SelJet)<0.5,axis=2),axis=-1), float,)
-            xB = ak.values_astype( (ak.num(BHadron)>0)*ak.sum(BHadron.pT*(BHadron.mass==ak.max(BHadron.mass, axis=-1))/genJetPt,axis=-1), float,)
-            #xB = ak.values_astype( (ak.num(BHadron)>0)*BHadron.pT*(BHadron.mass==ak.max(BHadron.mass, axis=-1))/genJetPt, float,)
-            bfragweight, bfragweightUp, bfragweightDown = get_bfragmentation_weight(xB, genJetPt, self._year+"_"+self._campaign) 
-            weights.add("bfragmentation", bfragweight, bfragweightUp, bfragweightDown)
-            bHadronId = ak.values_astype( -1*(ak.num(lastBHadron)!=1) + (ak.num(lastBHadron)==1)*ak.sum(lastBHadron.pdgID, axis=-1), float,)
-            bdecayweight, bdecayweightUp, bdecayweightDown = get_decay_weight(bHadronId, self._year+"_"+self._campaign)
-            weights.add("bdecay", bdecayweight, bdecayweightUp, bdecayweightDown)
+        elif sample=="QCDMu":
+            weights.add("jetbinsel", (pruned_ev["jetPtBin"]>=1))            
+            # b-jet templates uncertainties
+            if "Templates" in self.tag:
+                is_heavy_hadron = lambda p, pid: (abs(p.pdgId) // 100 == pid) | ( abs(p.pdgId) // 1000 == pid )
+                sel_bhadrons = is_heavy_hadron(pruned_ev.GenPart, 5) & (pruned_ev.GenPart.hasFlags("isLastCopy")) & (ak.all(pruned_ev.GenPart.metric_table(pruned_ev.SelJet)<0.5,axis=2))
+                bhadrons = pruned_ev.GenPart[sel_bhadrons]
+                BHadron = ak.zip( { "pT": bhadrons.pt,
+                                    "eta": bhadrons.eta,
+                                    "phi": bhadrons.phi,
+                                    "pdgID": bhadrons.pdgId,
+                                    "mass": get_hadron_mass(bhadrons.pdgId),
+                                    "hasBdaughter": ak.values_astype(
+                                       ak.any(is_heavy_hadron(bhadrons.children, 5), axis=-1), int
+                                     ),  # B hadrons with B-daughters not removed
+                                   } )
+                lastBHadron = BHadron[ BHadron.hasBdaughter==0 ]
+                # Gluon splitting
+                gluonSplitting     = ak.values_astype( 1.0*(ak.num(lastBHadron)<2) + 1.0*(ak.num(lastBHadron)>=2), float,)
+                gluonSplittingUp   = ak.values_astype( 1.0*(ak.num(lastBHadron)<2) + 1.5*(ak.num(lastBHadron)>=2), float,)
+                gluonSplittingDown = ak.values_astype( 1.0*(ak.num(lastBHadron)<2) + 0.5*(ak.num(lastBHadron)>=2), float,)
+                weights.add("gluonSplitting", gluonSplitting, gluonSplittingUp, gluonSplittingDown)
+                # b-hadron fragmentation
+                genJetPt = ak.values_astype( ak.sum(pruned_ev.GenJet.pt*ak.all(pruned_ev.GenJet.metric_table(pruned_ev.SelJet)<0.5,axis=2),axis=-1), float,)
+                xB = ak.values_astype( (ak.num(BHadron)>0)*ak.sum(BHadron.pT*(BHadron.mass==ak.max(BHadron.mass, axis=-1))/genJetPt,axis=-1), float,)
+                #xB = ak.values_astype( (ak.num(BHadron)>0)*BHadron.pT*(BHadron.mass==ak.max(BHadron.mass, axis=-1))/genJetPt, float,)
+                bfragweight, bfragweightUp, bfragweightDown = get_bfragmentation_weight(xB, genJetPt, self._year+"_"+self._campaign) 
+                weights.add("bfragmentation", bfragweight, bfragweightUp, bfragweightDown)
+                bHadronId = ak.values_astype( -1*(ak.num(lastBHadron)!=1) + (ak.num(lastBHadron)==1)*ak.sum(lastBHadron.pdgID, axis=-1), float,)
+                bdecayweight, bdecayweightUp, bdecayweightDown = get_decay_weight(bHadronId, self._year+"_"+self._campaign)
+                weights.add("bdecay", bdecayweight, bdecayweightUp, bdecayweightDown)
         # Kinematic corrections
         if "-" in self.tag and sample!="BTagMu":
             for level in [ "-".join( self.tag.split("-")[1:x] ) for x in range(2,len(self.tag.split("-"))+1) ]:
