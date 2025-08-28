@@ -159,8 +159,9 @@ def get_psweight(jetPtBins, ps_run_num, jetPtBin, run, luminosityBlock, triggerI
     return psweight
 
 def get_kinematic_weight(jetPt, jetEta, method, campaign, sample, level):
+    sampleDir, sampleData = sample.split("/")[0], sample.split("/")[1]
     ext = extractor()
-    ext.add_weight_sets([f"* * src/BTVNanoCommissioning/data/KinematicWeights/{campaign}/{method}_{sample}_{level}.root"])
+    ext.add_weight_sets([f"* * src/BTVNanoCommissioning/data/KinematicWeights/{campaign}/{sampleDir}/{method}_{sampleData}_{level}.root"])
     ext.finalize()
     return ext.make_evaluator()["kinematicWeights"](jetPt, jetEta)
 
@@ -452,21 +453,23 @@ class NanoProcessor(processor.ProcessorABC):
         weights = weight_manager(pruned_ev, self.SF_map, self.isSyst)
         if "Light" in self.tag: 
             light_jets["jetWeight"] = ak.values_astype( light_jets["jetWeight"]*(light_jets["jetPtBin"]>=1), float,)
-            sample = "Jet" if isRealData else "QCD"
+            sample = "QCD_sf/"
         else:
             weights.add("jetbinsel", (pruned_ev["jetPtBin"]>=1))
-            sample = "BTagMu" if isRealData else "QCDMu"
+            sample = "QCD_smu_sf/"
+        if isRealData: sample += "data"
+        else: sample += "MC"
         # Prescales
-        if sample=="BTagMu": 
+        if "data" in sample: 
             if "NoPS" not in self.tag: 
-                weights.add("psweight", get_psweight(self.jetPtBins, self.ps_run_num, pruned_ev["jetPtBin"], pruned_ev.run, pruned_ev.luminosityBlock))
-        elif sample=="Jet":
-            if "NoPS" not in self.tag: 
-                light_jets["jetWeight"] = ak.values_astype( light_jets["jetWeight"]*get_psweight(self.jetPtBins, self.ps_run_num, light_jets["jetPtBin"], pruned_ev.run, pruned_ev.luminosityBlock, self.triggerInfos), float,)
-        elif sample=="QCD":
+                if "QCD_smu_sf" in sample:
+                    weights.add("psweight", get_psweight(self.jetPtBins, self.ps_run_num, pruned_ev["jetPtBin"], pruned_ev.run, pruned_ev.luminosityBlock))
+                elif "QCD_sf" in sample:
+                    light_jets["jetWeight"] = ak.values_astype( light_jets["jetWeight"]*get_psweight(self.jetPtBins, self.ps_run_num, light_jets["jetPtBin"], pruned_ev.run, pruned_ev.luminosityBlock, self.triggerInfos), float,)
+        elif sample=="QCD_sf/MC":
             if "NoPS" in self.tag: light_jets["jetWeight"] = ak.values_astype( light_jets["jetWeight"]*light_jets["relativeEffectiveLuminosity"], float,)
         # b-jet templates uncertainties
-        elif sample=="QCDMu":
+        elif sample=="QCD_smu_sf/MC":
             if "NoPS" in self.tag: weights.add("efflumi", pruned_ev["relativeEffectiveLuminosity"])
             # b-jet templates uncertainties
             if "Templates" in self.tag:
@@ -498,9 +501,9 @@ class NanoProcessor(processor.ProcessorABC):
                 bdecayweight, bdecayweightUp, bdecayweightDown = get_decay_weight(bHadronId, self._year+"_"+self._campaign)
                 weights.add("bdecay", bdecayweight, bdecayweightUp, bdecayweightDown)
         # Kinematic corrections
-        if "-" in self.tag and sample!="BTagMu":
+        if "-" in self.tag and sample!="QCD_smu_sf/data":
             for level in [ "-".join( self.tag.split("-")[1:x] ) for x in range(2,len(self.tag.split("-"))+1) ]:
-                if sample=="QCDMu":
+                if sample=="QCD_smu_sf/MC":
                     weights.add(level.split("-")[-1], get_kinematic_weight(pruned_ev.SelJet.pt, pruned_ev.SelJet.eta, self._method, self._year+"_"+self._campaign, sample, level))
                 else:
                     light_jets["jetWeight"] = ak.values_astype( light_jets["jetWeight"]*get_kinematic_weight(light_jets.pt, light_jets.eta, self._method, self._year+"_"+self._campaign, sample, level), float,)
