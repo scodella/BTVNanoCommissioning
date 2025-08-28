@@ -988,13 +988,13 @@ def histo_writter(pruned_ev, output, weights, systematics, isSyst, SF_map):
                 output[histname].fill(syst, flav=flatten(pruned_ev.SelJet["hadronFlavour"]), btagdisc=flatten(pruned_ev.SelJet["btag"+histname.split("_")[1]+"B"]), weight=flatten(ak.broadcast_arrays(weight,pruned_ev.SelJet["pt"],)[0]))
             elif "jetPtBin" in pruned_ev.SelJet.fields:
                 if "jetpt"==histname or "jeteta"==histname:
-                    jetweight = ak.values_astype( weight*pruned_ev.SelJet["kinWeight"], float, )
+                    jetweight = ak.values_astype( weight*pruned_ev.SelJet["jetWeight"], float, )
                     if "jetpt"==histname:
                         output["jetpt"].fill(syst, ptbin=flatten(pruned_ev.SelJet["jetPtBin"]), jetpt=flatten(pruned_ev.SelJet.pt), weight=flatten(jetweight))
                     elif "jeteta"==histname:
                         output["jeteta"].fill(syst, ptbin=flatten(pruned_ev.SelJet["jetPtBin"]), jeteta=flatten(pruned_ev.SelJet.eta), weight=flatten(jetweight))
                 elif "ptrel"==histname:
-                    trkweight = ak.values_astype( weight*pruned_ev.TrkInc["kinWeight"]/pruned_ev.TrkInc["nTrkInc"], float, )
+                    trkweight = ak.values_astype( weight*pruned_ev.TrkInc["jetWeight"]/pruned_ev.TrkInc["nTrkInc"], float, )
                     output["ptrel"].fill(syst, ptbin=flatten(pruned_ev.TrkInc.jetPtBin), ptrel=flatten(pruned_ev.TrkInc.ptrel), weight=flatten(trkweight))
             elif "jetPtBin" in pruned_ev.fields:
                 if "nPV"==histname:

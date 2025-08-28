@@ -49,7 +49,22 @@ def load_Campaign(self):
     self.triggerInfos['BTagMu_AK4DiJet110_Mu5'] = { 'jetPtRange' : [ 140.,  200. ], 'ptAwayJet' : 30., 'ptTriggerEmulation' : 140., 'jetTrigger' :  'PFJet80' }
     self.triggerInfos['BTagMu_AK4DiJet170_Mu5'] = { 'jetPtRange' : [ 200.,  300. ], 'ptAwayJet' : 30., 'ptTriggerEmulation' : 200., 'jetTrigger' : 'PFJet140' }
     self.triggerInfos['BTagMu_AK4Jet300_Mu5']   = { 'jetPtRange' : [ 300., 1400. ], 'ptAwayJet' : 30., 'ptTriggerEmulation' :   0., 'jetTrigger' : 'PFJet260' }
-    
+   
+    if self._campaign=="Summer24":
+        totalLuminosity = 106787.472039533859253
+        self.triggerInfos['BTagMu_AK4DiJet20_Mu5']['relativeEffectiveLuminosity']     = 33.365124159121163/totalLuminosity
+        self.triggerInfos['BTagMu_AK4DiJet20_Mu5']['jetRelativeEffectiveLuminosity']  = 0.216365419814463/totalLuminosity
+        self.triggerInfos['BTagMu_AK4DiJet40_Mu5']['relativeEffectiveLuminosity']     = 208.532025994507313/totalLuminosity
+        self.triggerInfos['BTagMu_AK4DiJet40_Mu5']['jetRelativeEffectiveLuminosity']  = 0.216365419814463/totalLuminosity
+        self.triggerInfos['BTagMu_AK4DiJet70_Mu5']['relativeEffectiveLuminosity']     = 1026.619204896035790/totalLuminosity
+        self.triggerInfos['BTagMu_AK4DiJet70_Mu5']['jetRelativeEffectiveLuminosity']  = 1.622740649/totalLuminosity
+        self.triggerInfos['BTagMu_AK4DiJet110_Mu5']['relativeEffectiveLuminosity']    = 4106.476819584/totalLuminosity
+        self.triggerInfos['BTagMu_AK4DiJet110_Mu5']['jetRelativeEffectiveLuminosity'] = 6.254903502/totalLuminosity
+        self.triggerInfos['BTagMu_AK4DiJet170_Mu5']['relativeEffectiveLuminosity']    = 17794.732884865/totalLuminosity
+        self.triggerInfos['BTagMu_AK4DiJet170_Mu5']['jetRelativeEffectiveLuminosity'] = 71.178931539/totalLuminosity
+        self.triggerInfos['BTagMu_AK4Jet300_Mu5']['relativeEffectiveLuminosity']      = 106768.397309188/totalLuminosity
+        self.triggerInfos['BTagMu_AK4Jet300_Mu5']['jetRelativeEffectiveLuminosity']   = 834.128103978/totalLuminosity
+
     ## jet pt bins
     self.jetPtBins = collections.OrderedDict()
     if "Kinematics" in self.tag and "jetpt" not in self.tag:
@@ -347,7 +362,8 @@ class NanoProcessor(processor.ProcessorABC):
                 jet_zeros = ak.zeros_like(light_jets.pt, dtype=int)
                 light_jets["jetPtBin"] = jet_zeros
                 light_jets["nTrkInc"] = jet_zeros
-                light_jets["kinWeight"] = ak.ones_like(light_jets.pt)
+                light_jets["jetWeight"] = ak.ones_like(light_jets.pt)
+                light_jets["relativeEffectiveLuminosity"] = ak.zeros_like(light_jets.pt)
                 for iptbin, ptbin in enumerate(self.jetPtBins):
                     triggerCut = ak.values_astype( HLT_helper(pruned_ev, [ self.triggerInfos[self.jetPtBins[ptbin]["trigger"]]["jetTrigger"] ] ), int,)
                     minPtCut, maxPtCut = float(self.jetPtBins[ptbin]["jetPtRange"][0]), float(self.jetPtBins[ptbin]["jetPtRange"][1])
@@ -356,6 +372,7 @@ class NanoProcessor(processor.ProcessorABC):
                     muPtCut, muDRCut = self.jetPtBins[ptbin]["muPtCut"], self.jetPtBins[ptbin]["muDRCut"]
                     light_jets["jetPtBin"] = ak.where( (triggerCut) & (light_jets.pt>=minPtCut) & (light_jets.pt<maxPtCut) & (ak.count_nonzero(light_jets.metric_table(away_jet[away_jet.pt>=awayPtCut])>=1.5,axis=2)>=1) & (ak.count_nonzero(light_jets.metric_table(away_jet[away_jet.pt>=emulPtCut])>=0.05,axis=2)>=1) & (ak.count_nonzero(light_jets.metric_table(trkj_evt[trkj_evt.pf.trkPt>=muPtCut])<=muDRCut,axis=2)>=1), jet_zeros+1+iptbin, light_jets["jetPtBin"] )
                     light_jets["nTrkInc"] = ak.where( (light_jets.pt>=minPtCut) & (light_jets.pt<maxPtCut), ak.count_nonzero(light_jets.metric_table(trkj_evt[trkj_evt.pf.trkPt>=muPtCut])<=muDRCut,axis=2), light_jets["nTrkInc"])
+                    light_jets["relativeEffectiveLuminosity"] = ak.where( (light_jets.pt>=minPtCut) & (light_jets.pt<maxPtCut), jet_zeros+self.triggerInfos[self.jetPtBins[ptbin]["trigger"]]["jetRelativeEffectiveLuminosity"], light_jets["relativeEffectiveLuminosity"])
 
                 if not isRealData:
                     light_jets["jetPtBin"] = ak.where( light_jets.pt<pthat_safety_cut(self.ptHatSafetyCuts, pruned_ev.Generator.binvar), light_jets["jetPtBin"], jet_zeros )
@@ -386,7 +403,9 @@ class NanoProcessor(processor.ProcessorABC):
                 if "pTrel" in self.tag:
                     pruned_ev["EmulJet"] = event_emuljet[event_level][:, 0]
 
+                mujet_zeros = ak.zeros_like(pruned_ev["SelJet"].pt)
                 pruned_ev["jetPtBin"] = ak.zeros_like(pruned_ev["SelJet"].pt)
+                pruned_ev["relativeEffectiveLuminosity"] = mujet_zeros
                 for iptbin, ptbin in enumerate(self.jetPtBins):
                     triggerCut = ak.values_astype( HLT_helper(pruned_ev, [ self.jetPtBins[ptbin]["trigger"] ] ), int,)
                     minPtCut, maxPtCut = float(self.jetPtBins[ptbin]["jetPtRange"][0]), float(self.jetPtBins[ptbin]["jetPtRange"][1])
@@ -398,6 +417,8 @@ class NanoProcessor(processor.ProcessorABC):
                         pruned_ev["jetPtBin"] = ak.values_astype( pruned_ev["jetPtBin"] + (iptbin+1)*triggerCut*((pruned_ev.SelJet.pt>=minPtCut) & (pruned_ev.SelJet.pt<maxPtCut) & (pruned_ev.AwayJet.pt>=awayPtCut) & (pruned_ev.EmulJet.pt>=emulPtCut) & (pruned_ev.SelMuo.pt>=muPtCut) & (pruned_ev.SelMuo.delta_r(pruned_ev.SelJet)<=muDRCut)), int,)
                     elif self._method=="System8":
                         pruned_ev["jetPtBin"] = ak.values_astype( pruned_ev["jetPtBin"] + (iptbin+1)*triggerCut*((pruned_ev.SelJet.pt>=minPtCut) & (pruned_ev.SelJet.pt<maxPtCut) & (pruned_ev.AwayJet.pt>=awayPtCut) & (pruned_ev.SelMuo.pt>=muPtCut) & (pruned_ev.SelMuo.delta_r(pruned_ev.SelJet)<=muDRCut)), int,)
+
+                    pruned_ev["relativeEffectiveLuminosity"] = ak.where( (pruned_ev.SelJet.pt>=minPtCut) & (pruned_ev.SelJet.pt<maxPtCut), mujet_zeros+self.triggerInfos[self.jetPtBins[ptbin]["trigger"]]["relativeEffectiveLuminosity"], pruned_ev["relativeEffectiveLuminosity"])
 
                 if not isRealData:
                     pruned_ev["jetPtBin"] = ak.values_astype( pruned_ev["jetPtBin"]*(pruned_ev["SelJet"].pt<pthat_safety_cut(self.ptHatSafetyCuts, pruned_ev.Generator.binvar)), int,)
@@ -429,20 +450,24 @@ class NanoProcessor(processor.ProcessorABC):
         ####################
         # Configure SFs
         weights = weight_manager(pruned_ev, self.SF_map, self.isSyst)
-        if "Light" in self.tag: sample = "Jet" if isRealData else "QCD"
-        else: sample = "BTagMu" if isRealData else "QCDMu"
+        if "Light" in self.tag: 
+            light_jets["jetWeight"] = ak.values_astype( light_jets["jetWeight"]*(light_jets["jetPtBin"]>=1), float,)
+            sample = "Jet" if isRealData else "QCD"
+        else:
+            weights.add("jetbinsel", (pruned_ev["jetPtBin"]>=1))
+            sample = "BTagMu" if isRealData else "QCDMu"
         # Prescales
         if sample=="BTagMu": 
-            if "NoPS" not in self.tag:
+            if "NoPS" not in self.tag: 
                 weights.add("psweight", get_psweight(self.jetPtBins, self.ps_run_num, pruned_ev["jetPtBin"], pruned_ev.run, pruned_ev.luminosityBlock))
         elif sample=="Jet":
-            if "NoPS" not in self.tag:
-                light_jets["kinWeight"] = ak.values_astype( light_jets["kinWeight"]*get_psweight(self.jetPtBins, self.ps_run_num, light_jets["jetPtBin"], pruned_ev.run, pruned_ev.luminosityBlock, self.triggerInfos), float,)
+            if "NoPS" not in self.tag: 
+                light_jets["jetWeight"] = ak.values_astype( light_jets["jetWeight"]*get_psweight(self.jetPtBins, self.ps_run_num, light_jets["jetPtBin"], pruned_ev.run, pruned_ev.luminosityBlock, self.triggerInfos), float,)
         elif sample=="QCD":
-            light_jets["kinWeight"] = ak.values_astype( light_jets["kinWeight"]*(light_jets["jetPtBin"]>=1), float,)
+            if "NoPS" in self.tag: light_jets["jetWeight"] = ak.values_astype( light_jets["jetWeight"]*light_jets["relativeEffectiveLuminosity"], float,)
         # b-jet templates uncertainties
         elif sample=="QCDMu":
-            weights.add("jetbinsel", (pruned_ev["jetPtBin"]>=1))            
+            if "NoPS" in self.tag: weights.add("efflumi", pruned_ev["relativeEffectiveLuminosity"])
             # b-jet templates uncertainties
             if "Templates" in self.tag:
                 is_heavy_hadron = lambda p, pid: (abs(p.pdgId) // 100 == pid) | ( abs(p.pdgId) // 1000 == pid )
@@ -478,12 +503,12 @@ class NanoProcessor(processor.ProcessorABC):
                 if sample=="QCDMu":
                     weights.add(level.split("-")[-1], get_kinematic_weight(pruned_ev.SelJet.pt, pruned_ev.SelJet.eta, self._method, self._year+"_"+self._campaign, sample, level))
                 else:
-                    light_jets["kinWeight"] = ak.values_astype( light_jets["kinWeight"]*get_kinematic_weight(light_jets.pt, light_jets.eta, self._method, self._year+"_"+self._campaign, sample, level), float,)
+                    light_jets["jetWeight"] = ak.values_astype( light_jets["jetWeight"]*get_kinematic_weight(light_jets.pt, light_jets.eta, self._method, self._year+"_"+self._campaign, sample, level), float,)
 
         if "Light" in self.tag:
             pruned_ev["SelJet"] = light_jets
             if "Templates" in self.tag:
-                trkj_jetbased["kinWeight"] = light_jets["kinWeight"]
+                trkj_jetbased["jetWeight"] = light_jets["jetWeight"]
                 pruned_ev["TrkInc"] = trkj_jetbased
 
         # Configure systematics
