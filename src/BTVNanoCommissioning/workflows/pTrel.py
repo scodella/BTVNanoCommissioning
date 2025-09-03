@@ -67,19 +67,18 @@ def load_Campaign(self):
 
     ## jet pt bins
     self.jetPtBins = collections.OrderedDict()
-    if "Kinematics" in self.tag and "jetpt" not in self.tag:
-        for trigger in self.triggerInfos:
-            self.jetPtBins[trigger] = { 'jetPtRange' : self.triggerInfos[trigger]['jetPtRange'], 'trigger' : trigger }
+    if "Kinematics" in self.tag:
+        jetPtEdges = [ 20, 30, 50, 70, 100, 140, 200, 300, 320, 600, 1000 ]
     else:
-        jetPtEdges = [ 20, 30, 50, 70, 100, 140, 200, 300, 600, 1000, 1400 ]
-        for jetPtEdge in range(len(jetPtEdges)-1):
-            ptbin = 'Pt'+str(jetPtEdges[jetPtEdge])+'to'+str(jetPtEdges[jetPtEdge+1])
-            self.jetPtBins[ptbin] = {}
-            self.jetPtBins[ptbin]['jetPtRange'] = [ float(jetPtEdges[jetPtEdge]), float(jetPtEdges[jetPtEdge+1]) ]
-            for trigger in self.triggerInfos:
-                if jetPtEdges[jetPtEdge]>=self.triggerInfos[trigger]['jetPtRange'][0]:
-                    if jetPtEdges[jetPtEdge+1]<=self.triggerInfos[trigger]['jetPtRange'][1]:
-                        self.jetPtBins[ptbin]['trigger'] = trigger
+        jetPtEdges = [ 20, 30, 50, 70, 100, 140, 200, 300, 600, 1000 ]
+    for jetPtEdge in range(len(jetPtEdges)-1):
+        ptbin = 'Pt'+str(jetPtEdges[jetPtEdge])+'to'+str(jetPtEdges[jetPtEdge+1])
+        self.jetPtBins[ptbin] = {}
+        self.jetPtBins[ptbin]['jetPtRange'] = [ float(jetPtEdges[jetPtEdge]), float(jetPtEdges[jetPtEdge+1]) ]
+        for trigger in self.triggerInfos:
+            if jetPtEdges[jetPtEdge]>=self.triggerInfos[trigger]['jetPtRange'][0]:
+                if jetPtEdges[jetPtEdge+1]<=self.triggerInfos[trigger]['jetPtRange'][1]:
+                     self.jetPtBins[ptbin]['trigger'] = trigger
 
     ## Away jet
     self.btagAwayJetDiscriminant = "Bprob"
@@ -441,7 +440,7 @@ class NanoProcessor(processor.ProcessorABC):
                             if wp!="No":
                                 pruned_ev[tagger] = ak.values_astype( pruned_ev[tagger] + (pruned_ev.SelJet["btag"+tagger+"B"]>wp_dict_campaign[tagger]["b"][wp]), int,)
                     if self._method=="pTrel" and len(list(wp_dict_campaign.keys()))==1:
-                        bpruned_ev["bCorrector"] = ak.values_astype( (pruned_ev.SelJet[self.bCorrectorDiscriminant]>=self.bCorrectorCut), int,)
+                        pruned_ev["bCorrector"] = ak.values_astype( (pruned_ev.SelJet[self.bCorrectorDiscriminant]>=self.bCorrectorCut), int,)
                     if self._method=="System8":
                         pruned_ev["taggedAwayJet"] = ak.values_astype( (pruned_ev.AwayJet[self.btagAwayJetDiscriminant]>=self.btagAwayJetCut), int,)
 
