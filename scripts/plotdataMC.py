@@ -96,6 +96,12 @@ parser.add_argument(
     default=None,
     help="Only for W+c phase space, split opposite sign(1) and same sign events(-1), if not specified, the combined OS-SS phase space is used",
 )
+parser.add_argument(
+    "--ptbin",
+    type=int,
+    default=-1,
+    help="jet pT bin to be plotted",
+)
 
 
 args = parser.parse_args()
@@ -132,7 +138,7 @@ collated = collate(output, mergemap)
 collated = {
     key: value for key, value in collated.items() if isinstance(collated[key], dict)
 }
-print(collated.keys())
+#print(collated.keys())
 ### input text settings
 if "Wc" in args.phase:
     input_txt = "W+c"
@@ -235,7 +241,11 @@ for index, discr in enumerate(var_set):
         SF_axis = allaxis
         noSF_axis = allaxis
     if "ptbin" in collated["mc"][discr].axes.name:
-        allaxis["ptbin"] = sum
+        allaxis["ptbin"] = sum if args.ptbin<0 else args.ptbin
+        SF_axis = allaxis
+        noSF_axis = allaxis
+    if "btagwp" in collated["mc"][discr].axes.name:
+        allaxis["btagwp"] = sum 
         SF_axis = allaxis
         noSF_axis = allaxis
     if "syst" in collated["mc"][discr].axes.name:
