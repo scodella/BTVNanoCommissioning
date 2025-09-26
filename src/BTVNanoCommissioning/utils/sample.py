@@ -1,7 +1,7 @@
 predefined_sample = {
     ## Commissioning WF
     "QCD_sf": {
-        "data": ["JetMET0", "JetMET1"],
+        "data": ["JetHT", "JetMET", "JetMET0", "JetMET1"],
         "MC": [
             #"QCD_PT-1000to1400_TuneCP5_13p6TeV_pythia8",
             #"QCD_PT-120to170_TuneCP5_13p6TeV_pythia8",
@@ -51,28 +51,28 @@ predefined_sample = {
             #"QCD_PT-600to800_MuEnrichedPt5_TuneCP5_13p6TeV_pythia8",
             #"QCD_PT-800to1000_MuEnrichedPt5_TuneCP5_13p6TeV_pythia8",
             #"QCD_PT-80to120_MuEnrichedPt5_TuneCP5_13p6TeV_pythia8",
-            "QCD_Bin-PT-15to20_Fil-MuEnriched_TuneCP5_13p6TeV_pythia8",
-            "QCD_Bin-PT-20to30_Fil-MuEnriched_TuneCP5_13p6TeV_pythia8",
-            "QCD_Bin-PT-30to50_Fil-MuEnriched_TuneCP5_13p6TeV_pythia8",
-            "QCD_Bin-PT-50to80_Fil-MuEnriched_TuneCP5_13p6TeV_pythia8",
-            "QCD_Bin-PT-80to120_Fil-MuEnriched_TuneCP5_13p6TeV_pythia8",
+            "QCD_Bin-PT-1000_Fil-MuEnriched_TuneCP5_13p6TeV_pythia8",
             "QCD_Bin-PT-120to170_Fil-MuEnriched_TuneCP5_13p6TeV_pythia8",
+            "QCD_Bin-PT-15to20_Fil-MuEnriched_TuneCP5_13p6TeV_pythia8",
             "QCD_Bin-PT-170to300_Fil-MuEnriched_TuneCP5_13p6TeV_pythia8",
+            "QCD_Bin-PT-20to30_Fil-MuEnriched_TuneCP5_13p6TeV_pythia8",
             "QCD_Bin-PT-300to470_Fil-MuEnriched_TuneCP5_13p6TeV_pythia8",
+            "QCD_Bin-PT-30to50_Fil-MuEnriched_TuneCP5_13p6TeV_pythia8",
             "QCD_Bin-PT-470to600_Fil-MuEnriched_TuneCP5_13p6TeV_pythia8",
+            "QCD_Bin-PT-50to80_Fil-MuEnriched_TuneCP5_13p6TeV_pythia8",
             "QCD_Bin-PT-600to800_Fil-MuEnriched_TuneCP5_13p6TeV_pythia8",
             "QCD_Bin-PT-800to1000_Fil-MuEnriched_TuneCP5_13p6TeV_pythia8",
-            "QCD_Bin-PT-1000_Fil-MuEnriched_TuneCP5_13p6TeV_pythia8"
+            "QCD_Bin-PT-80to120_Fil-MuEnriched_TuneCP5_13p6TeV_pythia8",
         ],
     },
     "workingPoints": { "data": [], "MC": [ "TTto4Q_TuneCP5_13p6TeV_powheg-pythia8", "QCD_Bin-PT-80to120_TuneCP5_13p6TeV_pythia8" ] },
     "ctag_DY_sf": {
-        "data": ["Muon0", "Muon1"],
+        "data": ["DoubleMuon", "Muon", "Muon0", "Muon1"],
         "MC": ["DYto2L-2Jets_MLL-50_TuneCP5_13p6TeV_amcatnloFXFX-pythia8"],
         "minor_MC": ["TTto2L2Nu_TuneCP5_13p6TeV_powheg-pythia8"],
     },
     "ectag_DY_sf": {
-        "data": ["EGamma0", "EGamma1"],
+        "data": ["EGamma", "EGamma0", "EGamma1"],
         "MC": ["DYto2L-2Jets_MLL-50_TuneCP5_13p6TeV_amcatnloFXFX-pythia8"],
         "minor_MC": ["TTto2L2Nu_TuneCP5_13p6TeV_powheg-pythia8"],
     },
@@ -99,7 +99,7 @@ predefined_sample = {
         ],
     },
     "ctag_ttdilep_sf": {
-        "data": ["Muon0", "Muon1"],
+        "data": ["DoubleMuon", "Muon", "Muon0", "Muon1"],
         "MC": ["TTto2L2Nu_TuneCP5_13p6TeV_powheg-pythia8"],
         "minor_MC": [
             "TWminusto2L2Nu_TuneCP5_13p6TeV_powheg-pythia8",
@@ -110,7 +110,7 @@ predefined_sample = {
         ],
     },
     "ectag_ttdilep_sf": {
-        "data": ["EGamma0", "EGamma1"],
+        "data": ["EGamma", "EGamma0", "EGamma1"],
         "MC": ["TTto2L2Nu_TuneCP5_13p6TeV_powheg-pythia8"],
         "minor_MC": [
             "TWminusto2L2Nu_TuneCP5_13p6TeV_powheg-pythia8",
@@ -121,7 +121,7 @@ predefined_sample = {
         ],
     },
     "ttsemilep_sf": {
-        "data": ["Muon0", "Muon1"],
+        "data": ["Muon", "Muon0", "Muon1"],
         "MC": [
             "TTtoLNu2Q_TuneCP5_13p6TeV_powheg-pythia8",
             "WtoLNu-4Jets_TuneCP5_13p6TeV_madgraphMLM-pythia8",
@@ -145,7 +145,7 @@ predefined_sample = {
         ],
     },
     "ctag_ttsemilep_sf": {
-        "data": ["Muon0", "Muon1"],
+        "data": ["Muon", "Muon0", "Muon1"],
         "MC": [
             "TTtoLNu2Q_TuneCP5_13p6TeV_powheg-pythia8",
             "WtoLNu-4Jets_TuneCP5_13p6TeV_madgraphMLM-pythia8",
@@ -169,7 +169,7 @@ predefined_sample = {
         ],
     },
     "ectag_ttsemilep_sf": {
-        "data": ["EGamma0", "EGamma1"],
+        "data": ["EGamma", "EGamma0", "EGamma1"],
         "MC": [
             "TTtoLNu2Q_TuneCP5_13p6TeV_powheg-pythia8",
             "WtoLNu-4Jets_TuneCP5_13p6TeV_madgraphMLM-pythia8",
@@ -193,7 +193,7 @@ predefined_sample = {
         ],
     },
     "ctag_Wc_sf": {
-        "data": ["Muon0", "Muon1"],
+        "data": ["Muon", "Muon0", "Muon1"],
         "MC": [
             "TTtoLNu2Q_TuneCP5_13p6TeV_powheg-pythia8",
             "TTto2L2Nu_TuneCP5_13p6TeV_powheg-pythia8",
@@ -218,7 +218,7 @@ predefined_sample = {
         ],
     },
     "ectag_Wc_sf": {
-        "data": ["EGamma0", "EGamma1"],
+        "data": ["EGamma", "EGamma0", "EGamma1"],
         "MC": [
             "TTtoLNu2Q_TuneCP5_13p6TeV_powheg-pythia8",
             "TTto2L2Nu_TuneCP5_13p6TeV_powheg-pythia8",
@@ -245,18 +245,18 @@ predefined_sample = {
         ],
     },
     "BTA": {
-        "data": ["JetMET0", "JetMET1"],
+        "data": ["JetHT", "JetMET", "JetMET0", "JetMET1"],
         "MC": [
             "QCD_PT-80to120_TuneCP5_13p6TeV_pythia8",
             "TTto4Q_TuneCP5_13p6TeV_powheg-pythia8",
         ],
     },
     "BTA_addAllTracks": {
-        "data": ["JetMET0", "JetMET1"],
+        "data": ["JetHT", "JetMET", "JetMET0", "JetMET1"],
         "MC": ["QCD_PT-80to120_TuneCP5_13p6TeV_pythia8"],
     },
     "BTA_addPFMuons": {
-        "data": ["JetMET0", "JetMET1", "BTagMu"],
+        "data": ["JetHT", "JetMET", "JetMET0", "JetMET1", "BTagMu"],
         "MC": [
             "QCD_PT-1000to1400_TuneCP5_13p6TeV_pythia8",
             "QCD_PT-120to170_TuneCP5_13p6TeV_pythia8",
@@ -310,6 +310,36 @@ predefined_sample = {
             "TTto2L2Nu_Hdamp-418_TuneCP5_13p6TeV_powheg-pythia8",
             "TTto2L2Nu_TuneCP5Down_13p6TeV_powheg-pythia8",
             "TTto2L2Nu_TuneCP5Up_13p6TeV_powheg-pythia8",
+        ],
+    },
+    "sf_ttdilep_kin": {
+        "data": ["MuonEG"],
+        "MC": ["TTto2L2Nu_TuneCP5_13p6TeV_powheg-pythia8"],
+        "minor_MC": [
+            "TTtoLNu2Q_TuneCP5_13p6TeV_powheg-pythia8",
+            "TWminusto2L2Nu_TuneCP5_13p6TeV_powheg-pythia8",
+            "TbarWplusto2L2Nu_TuneCP5_13p6TeV_powheg-pythia8",
+            "TWminustoLNu2Q_TuneCP5_13p6TeV_powheg-pythia8",
+            "TbarWplustoLNu2Q_TuneCP5_13p6TeV_powheg-pythia8",
+            "TbarBQ_t-channel_4FS_TuneCP5_13p6TeV_powheg-madspin-pythia8",
+            "TBbarQ_t-channel_4FS_TuneCP5_13p6TeV_powheg-madspin-pythia8",
+            "WWto2L2Nu_TuneCP5_13p6TeV_powheg-pythia8",
+            "ZZto2L2Q_TuneCP5_13p6TeV_powheg-pythia8",
+            "WZto3LNu_TuneCP5_13p6TeV_powheg-pythia8",
+            "WZtoLNu2Q_TuneCP5_13p6TeV_powheg-pythia8",
+        ],
+        "syst_MC": [
+            "TTto2L2Nu_MT-171p5_TuneCP5_13p6TeV_powheg-pythia8",
+            "TTto2L2Nu_MT-175p5_TuneCP5_13p6TeV_powheg-pythia8",
+            "TTto2L2Nu_Hdamp-158_TuneCP5_13p6TeV_powheg-pythia8",
+            "TTto2L2Nu_Hdamp-418_TuneCP5_13p6TeV_powheg-pythia8",
+            "TTto2L2Nu_TuneCP5Down_13p6TeV_powheg-pythia8",
+            "TTto2L2Nu_TuneCP5Up_13p6TeV_powheg-pythia8",
+            # some 2024 MC samples have different names...
+            "TTto2L2Nu_Par-MT-171p5_TuneCP5_13p6TeV_powheg-pythia8",
+            "TTto2L2Nu_Par-MT-175p5_TuneCP5_13p6TeV_powheg-pythia8",
+            "TTto2L2Nu_Par-Hdamp-158_TuneCP5_13p6TeV_powheg-pythia8",
+            "TTto2L2Nu_Par-Hdamp-418_TuneCP5_13p6TeV_powheg-pythia8",
         ],
     },
 }
