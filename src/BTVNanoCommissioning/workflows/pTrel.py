@@ -214,8 +214,6 @@ class NanoProcessor(processor.ProcessorABC):
         for sfm in list(self.SF_map.keys()):
             if sfm!="campaign" and sfm!="PU":
                 del self.SF_map[sfm]
-        #if 'JME' in self.SF_map:
-        #  del self.SF_map['JME'] #'campaign', 'PU', 'JME', 'jetveto', 'MUO_cfg', 'EGM_cfg', 'MUO', 'EGM'
         load_Campaign(self) 
 
     @property
@@ -225,10 +223,10 @@ class NanoProcessor(processor.ProcessorABC):
     ## Apply corrections on momentum/mass on MET, Jet, Muon
     def process(self, events):
         events = missing_branch(events)
-        shifts = common_shifts(self, events)
-        
+        vetoed_events, shifts = common_shifts(self, events)
+
         return processor.accumulate(
-            self.process_shift(update(events, collections), name)
+            self.process_shift(update(vetoed_events, collections), name)
             for collections, name in shifts
         )
 
