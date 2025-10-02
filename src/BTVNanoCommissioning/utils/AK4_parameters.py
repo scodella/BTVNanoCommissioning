@@ -194,9 +194,5 @@ correction_config = {
         "muonSS": "",
         "electronSS": ["EGMScale_Compound_Ele_2024", "EGMSmearAndSyst_ElePTsplit_2024"],
     },
-    "Summer24": {
-        "lumiMask": "Cert_Collisions2024_378981_386951_Golden.json",
-        "PU": "PU_weights_Summer24.histo.root",
-    },
     "prompt_dataMC": {"lumiMask": "$PROMPT_DATAMC"},
 }
