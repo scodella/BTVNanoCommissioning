@@ -212,7 +212,7 @@ class NanoProcessor(processor.ProcessorABC):
         ## Load corrections
         self.SF_map = load_SF(self._year, self._campaign)
         for sfm in list(self.SF_map.keys()):
-            if sfm!="campaign" and sfm!="PU":
+            if sfm!="campaign" and sfm!="PU" and "JME" not in sfm and "jetveto" not in sfm:
                 del self.SF_map[sfm]
         load_Campaign(self) 
 
@@ -223,6 +223,7 @@ class NanoProcessor(processor.ProcessorABC):
     ## Apply corrections on momentum/mass on MET, Jet, Muon
     def process(self, events):
         events = missing_branch(events)
+        dummy = events.JetPFCands.pf.trkQuality
         vetoed_events, shifts = common_shifts(self, events)
 
         return processor.accumulate(
