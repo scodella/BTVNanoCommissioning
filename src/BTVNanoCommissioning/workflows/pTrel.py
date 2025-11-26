@@ -81,9 +81,15 @@ def load_Campaign(self):
                      self.jetPtBins[ptbin]['trigger'] = trigger
 
     ## Away jet
-    self.btagAwayJetDiscriminant = "Bprob"
-    self.btagAwayJetCut = 1.221 if "AwayJetDown" in self.tag else 5.134 if "AwayJetUp" in self.tag else 2.555
-    self.btagVetoCut = 1.221
+    self.awayJetDRCut = 1.5 if int(self._year)<2024 else 0.05
+    self.btagAwayJetDiscriminant = "Bprob" if int(self._year)<2024 else "btagPNetB" 
+    if self.btagAwayJetDiscriminant=="Bprob":
+        self.btagAwayJetCut = 1.221 if "AwayJetDown" in self.tag else 5.134 if "AwayJetUp" in self.tag else 2.555
+        self.btagVetoCut = 1.221
+    elif self.btagAwayJetDiscriminant=="btagPNetB":      
+        #self.btagAwayJetCut = 0.0365 if "AwayJetDown" in self.tag else 0.6373 if "AwayJetUp" in self.tag else 0.1990
+        self.btagAwayJetCut = 0.3 if "AwayJetDown" in self.tag else 0.8 if "AwayJetUp" in self.tag else 0.6
+        self.btagVetoCut = 0.0365
 
     ## bCorrector
     if len(list(btag_wp_dict[self._year+"_"+self._campaign].keys()))==1:
@@ -93,7 +99,7 @@ def load_Campaign(self):
 
     ## Muon selection
     self.muonKinBins = collections.OrderedDict()
-    if self._method=="pTrel":
+    if self._method=="pTrel" and "Optimization" not in self.tag and int(self._year)<2024:
         self.muonKinBins["Bin1"] = { "range" : [  20.,   50. ], "pt" : 5., "dr" : 0.20 }
         self.muonKinBins["Bin2"] = { "range" : [  50.,  100. ], "pt" : 5., "dr" : 0.15 }
         self.muonKinBins["Bin3"] = { "range" : [ 100., 1400. ], "pt" : 5., "dr" : 0.12 }
@@ -107,7 +113,7 @@ def load_Campaign(self):
                     if "MuPtUp"   in self.tag: self.muonKinBins[mubin]["pt"] = 8.
                     if "MuPtDown" in self.tag: self.muonKinBins[mubin]["pt"] = 6.
                     if "MuDRDown" in self.tag: self.muonKinBins[mubin]["dr"] = 999.
-    elif self._method=="System8":
+    elif self._method=="System8" or "Optimization" in self.tag or int(self._year)>=2024:
         self.muonKinBins["Bin1"] = { "range" : [  20., 1400. ], "pt" : 5., "dr" : 0.40 }
         if "MuPtUp"   in self.tag: self.muonKinBins["Bin1"]["pt"] = 8.
         if "MuPtDown" in self.tag: self.muonKinBins["Bin1"]["pt"] = 6.
@@ -310,19 +316,22 @@ class NanoProcessor(processor.ProcessorABC):
             mujet_sel = ak.fill_none( (ak.all(events.Jet.metric_table(event_softmu)<0.5,axis=2)) & (events.Jet.pt>=20.) & (events.Jet.pt<1000.) & (abs(events.Jet.eta)<2.5) & (jet_id(events, self._campaign)), False, axis=-1 )
             event_mujet = events.Jet[ mujet_sel ]
 
-            if self._method=="pTrel":
+            if self._method=="pTrel" and "Optimization" not in self.tag:
 
-                awayjet_sel = ak.fill_none( (ak.all(events.Jet.metric_table(event_mujet)>1.5,axis=2)) & (events.Jet.pt>=20.) & (abs(events.Jet.eta)<2.5) & (jet_id(events, self._campaign)) & (events.Jet[self.btagAwayJetDiscriminant]>=self.btagAwayJetCut), False, axis=-1 )
+                awayjet_sel = ak.fill_none( (ak.all(events.Jet.metric_table(event_mujet)>self.awayJetDRCut,axis=2)) & (events.Jet.pt>=20.) & (abs(events.Jet.eta)<2.5) & (jet_id(events, self._campaign)) & (events.Jet[self.btagAwayJetDiscriminant]>=self.btagAwayJetCut), False, axis=-1 )
                 event_awayjet = events.Jet[ awayjet_sel ]
                 emuljet_sel = ak.fill_none( (ak.all(events.Jet.metric_table(event_mujet)>0.05,axis=2)) & (events.Jet.pt>=20.) & (abs(events.Jet.eta)<2.5) & (jet_id(events, self._campaign)), False, axis=-1 )
                 event_emuljet = events.Jet[ emuljet_sel ]
 
                 req_sel = (ak.num(event_softmu.pt)==1) & (ak.num(event_mujet.pt)==1) & (ak.num(event_awayjet.pt)==1) & req_trg
 
-            elif self._method=="System8":
+            elif self._method=="System8" or "Optimization" in self.tag:
 
                 awayjet_sel = ak.fill_none( (ak.all(events.Jet.metric_table(event_mujet)>0.05,axis=2)) & (events.Jet.pt>=20.) & (abs(events.Jet.eta)<2.5) & (jet_id(events, self._campaign)), False, axis=-1 )
                 event_awayjet = events.Jet[ awayjet_sel ]
+                if self._method=="pTrel" and "Optimization" in self.tag: 
+                    emuljet_sel = ak.fill_none( (ak.all(events.Jet.metric_table(event_mujet)>0.05,axis=2)) & (events.Jet.pt>=20.) & (abs(events.Jet.eta)<2.5) & (jet_id(events, self._campaign)), False, axis=-1 )
+                    event_emuljet = events.Jet[ emuljet_sel ]
 
                 req_sel = (ak.num(event_softmu.pt)==1) & (ak.num(event_mujet.pt)==1) & (ak.num(event_awayjet.pt)>=1) & req_trg
 
@@ -369,7 +378,7 @@ class NanoProcessor(processor.ProcessorABC):
                     awayPtCut = float(self.triggerInfos[self.jetPtBins[ptbin]["trigger"]]["ptAwayJet"])
                     emulPtCut = float(self.triggerInfos[self.jetPtBins[ptbin]["trigger"]]["ptTriggerEmulation"])
                     muPtCut, muDRCut = self.jetPtBins[ptbin]["muPtCut"], self.jetPtBins[ptbin]["muDRCut"]
-                    light_jets["jetPtBin"] = ak.where( (triggerCut) & (light_jets.pt>=minPtCut) & (light_jets.pt<maxPtCut) & (ak.count_nonzero(light_jets.metric_table(away_jet[away_jet.pt>=awayPtCut])>=1.5,axis=2)>=1) & (ak.count_nonzero(light_jets.metric_table(away_jet[away_jet.pt>=emulPtCut])>=0.05,axis=2)>=1) & (ak.count_nonzero(light_jets.metric_table(trkj_evt[trkj_evt.pf.trkPt>=muPtCut])<=muDRCut,axis=2)>=1), jet_zeros+1+iptbin, light_jets["jetPtBin"] )
+                    light_jets["jetPtBin"] = ak.where( (triggerCut) & (light_jets.pt>=minPtCut) & (light_jets.pt<maxPtCut) & (ak.count_nonzero(light_jets.metric_table(away_jet[away_jet.pt>=awayPtCut])>=self.awayJetDRCut,axis=2)>=1) & (ak.count_nonzero(light_jets.metric_table(away_jet[away_jet.pt>=emulPtCut])>=0.05,axis=2)>=1) & (ak.count_nonzero(light_jets.metric_table(trkj_evt[trkj_evt.pf.trkPt>=muPtCut])<=muDRCut,axis=2)>=1), jet_zeros+1+iptbin, light_jets["jetPtBin"] )
                     light_jets["nTrkInc"] = ak.where( (light_jets.pt>=minPtCut) & (light_jets.pt<maxPtCut), ak.count_nonzero(light_jets.metric_table(trkj_evt[trkj_evt.pf.trkPt>=muPtCut])<=muDRCut,axis=2), light_jets["nTrkInc"])
                     light_jets["relativeEffectiveLuminosity"] = ak.where( (light_jets.pt>=minPtCut) & (light_jets.pt<maxPtCut), jet_zeros+self.triggerInfos[self.jetPtBins[ptbin]["trigger"]]["jetRelativeEffectiveLuminosity"], light_jets["relativeEffectiveLuminosity"])
 
@@ -385,6 +394,7 @@ class NanoProcessor(processor.ProcessorABC):
                     vec = ak.zip( {"pt": trkj_jetbased.pf.trkPt, "eta": trkj_jetbased.pf.trkEta, "phi": trkj_jetbased.pf.trkPhi, "mass": trkj_jetbased.pf.mass,}, 
                              behavior=vector.behavior, with_name="PtEtaPhiMLorentzVector", )
                     trkj_jetbased["ptrel"] = (vec.subtract(light_jets)).cross(light_jets).p/light_jets.p
+                    trkj_jetbased["muJetDR"] = vec.delta_r(light_jets)
                     
                     trk_zeros = ak.zeros_like(trkj_jetbased.ptrel, dtype=int)
                     trkj_jetbased["jetPtBin"] = light_jets["jetPtBin"]
@@ -425,6 +435,12 @@ class NanoProcessor(processor.ProcessorABC):
                 if "Kinematics" in self.tag:
                     pruned_ev["PV"] = events.PV[event_level]
                     pruned_ev["muJetDR"] = pruned_ev.SelMuo.delta_r(pruned_ev.SelJet)
+                    if "Optimization" in self.tag:
+                        pruned_ev["jetFlavour"] = pruned_ev.SelJet.hadronFlavour
+                        pruned_ev["awayJetBTagDiscriminant"] = pruned_ev.AwayJet[self.btagAwayJetDiscriminant]
+                        pruned_ev["awayJetBTagged"] = ak.values_astype( (pruned_ev.AwayJet[self.btagAwayJetDiscriminant]>=self.btagAwayJetCut), int,)
+                        pruned_ev["awayJetDR"] = pruned_ev.AwayJet.delta_r(pruned_ev.SelJet)
+                        pruned_ev["ptrelcut"] = ak.values_astype( ((pruned_ev.SelMuo.cross(pruned_ev.SelJet).p/pruned_ev.SelJet.p)>=1.5), int,)
 
                 elif "Templates" in self.tag:   
                     pruned_ev["ptrel"] = pruned_ev.SelMuo.cross(pruned_ev.SelJet).p/pruned_ev.SelJet.p
@@ -439,6 +455,7 @@ class NanoProcessor(processor.ProcessorABC):
                             if wp!="No":
                                 pruned_ev[tagger] = ak.values_astype( pruned_ev[tagger] + (pruned_ev.SelJet["btag"+tagger+"B"]>wp_dict_campaign[tagger]["b"][wp]), int,)
                     if self._method=="pTrel" and len(list(wp_dict_campaign.keys()))==1:
+                        pruned_ev["muJetDR"] = pruned_ev.SelMuo.delta_r(pruned_ev.SelJet)
                         pruned_ev["bCorrector"] = ak.values_astype( (pruned_ev.SelJet[self.bCorrectorDiscriminant]>=self.bCorrectorCut), int,)
                     if self._method=="System8":
                         pruned_ev["taggedAwayJet"] = ak.values_astype( (pruned_ev.AwayJet[self.btagAwayJetDiscriminant]>=self.btagAwayJetCut), int,)

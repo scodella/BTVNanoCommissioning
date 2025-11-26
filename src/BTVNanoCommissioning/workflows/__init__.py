@@ -118,6 +118,8 @@ for dataset in [ "", "Light" ]:
         if "Templates" in step:
             selection_list.extend([ "MuPtDown", "MuPtUp", "MuDRDown", "MuDRUp" ])
             if dataset=="": selection_list.extend([ "AwayJetDown" , "AwayJetUp" ])
+        elif "Kinematics" in step and dataset=="":
+            selection_list.append("Optimization")
         for selection in selection_list:
             for correction in correction_list:
                 workflow_flag = dataset+step+selection+correction

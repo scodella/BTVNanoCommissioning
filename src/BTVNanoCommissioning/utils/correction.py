@@ -792,7 +792,7 @@ def JME_shifts(
                         ]
 
                 else:
-                    if "JES_Total" in jets.fields:
+                    if "JES_TotalX" in jets.fields:
                         shifts += [
                             (
                                 {
@@ -826,7 +826,7 @@ def JME_shifts(
                                 "UESDown",
                             ),
                         ]
-                    if "JER" in jets.fields:
+                    if "JERX" in jets.fields:
                         shifts += [
                             (
                                 {

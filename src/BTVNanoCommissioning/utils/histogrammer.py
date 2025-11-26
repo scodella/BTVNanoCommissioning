@@ -439,23 +439,36 @@ def histogrammer(events, workflow, year="2022", campaign="Summer22"):
             jeteta_axis = Hist.axis.Regular(50, -2.5, 2.5, name="jeteta",label="#mu-jet #eta")
             _hist_dict["jeteta"] = Hist.Hist(syst_axis, ptbin_axis, jeteta_axis, Hist.storage.Weight())
             if "Light" not in workflow:
-                npv_axis = Hist.axis.Integer(0, 100, name="npv", label="N PVs")
-                _hist_dict["nPV"] = Hist.Hist(syst_axis, ptbin_axis, npv_axis, Hist.storage.Weight())
-                mujetdr_axis = Hist.axis.Regular(20, 0, 0.5, name="mujetdr", label="DeltaR")
-                _hist_dict["DR"] = Hist.Hist(syst_axis, ptbin_axis, mujetdr_axis, Hist.storage.Weight())
-                muopt_axis = Hist.axis.Regular(20, 0., 100., name="muopt", label="mu p_{T} [GeV]")
-                _hist_dict["muopt"] = Hist.Hist(syst_axis, ptbin_axis, muopt_axis, Hist.storage.Weight())
+                if "Optimization" not in workflow:
+                    npv_axis = Hist.axis.Integer(0, 100, name="npv", label="N PVs")
+                    _hist_dict["nPV"] = Hist.Hist(syst_axis, ptbin_axis, npv_axis, Hist.storage.Weight())
+                    mujetdr_axis = Hist.axis.Regular(20, 0, 0.5, name="mujetdr", label="DeltaR")
+                    _hist_dict["DR"] = Hist.Hist(syst_axis, ptbin_axis, mujetdr_axis, Hist.storage.Weight())
+                    muopt_axis = Hist.axis.Regular(20, 0., 100., name="muopt", label="mu p_{T} [GeV]")
+                    _hist_dict["muopt"] = Hist.Hist(syst_axis, ptbin_axis, muopt_axis, Hist.storage.Weight())
+                else:
+                    mujetdr_axis = Hist.axis.Regular(20, 0, 0.5, name="mujetdr", label="DeltaR")
+                    ptrelcut_axis = Hist.axis.IntCategory([0, 1], name="ptrelcut", label="pTrel")
+                    _hist_dict["muonDR"] = Hist.Hist(syst_axis, ptbin_axis, flav_axis, ptrelcut_axis, mujetdr_axis, Hist.storage.Weight())
+                    awayjetbtagdisc_axis = Hist.axis.Regular(50, 0., 1., name="btagdisc", label="btagdisc")
+                    awayjetdr_axis = Hist.axis.Regular(30, 0., 3., name="awayjetdr", label="DeltaR")
+                    awayjetbtagcut_axis = Hist.axis.IntCategory([0, 1], name="awayjetbtagcut", label="awayjetbtagcut")
+                    awayjetdrcut_axis = Hist.axis.IntCategory([0, 1], name="awayjetdrcut", label="awayjetdrcut")
+                    _hist_dict["awayJetBTagDiscriminant"] = Hist.Hist(syst_axis, ptbin_axis, flav_axis, awayjetdrcut_axis, awayjetbtagdisc_axis, Hist.storage.Weight())
+                    _hist_dict["awayJetDR"] = Hist.Hist(syst_axis, ptbin_axis, flav_axis, awayjetbtagcut_axis, awayjetdr_axis, Hist.storage.Weight())
         elif "Templates" in workflow:
             ptrel_axis = Hist.axis.Regular(50, 0., 4., name="ptrel", label="p_{T}^{rel} [GeV]")
+            mujetdr_axis = Hist.axis.Regular(16, 0, 0.4, name="mujetdr", label="DeltaR")
             if "Light" in workflow:
-                _hist_dict["ptrel"] = Hist.Hist(syst_axis, ptbin_axis, ptrel_axis, Hist.storage.Weight())
+                _hist_dict["ptrel"] = Hist.Hist(syst_axis, ptbin_axis, mujetdr_axis, ptrel_axis, Hist.storage.Weight())
             else:
-                btagwp_axis = Hist.axis.IntCategory([0, 1, 2, 3, 4, 5], name="btagwp", label="Pass b-tag WP")
+                #btagwp_axis = Hist.axis.IntCategory([0, 1, 2, 3, 4, 5], name="btagwp", label="Pass b-tag WP")
+                btagwp_axis = Hist.axis.Regular(6, 0., 6., name="btagwp", label="Pass b-tag WP")
                 if "pTrel" in workflow:
                     for tagger in btag_wp_dict[year+"_"+campaign]:
-                        _hist_dict["ptrel_"+tagger] = Hist.Hist(syst_axis, ptbin_axis, flav_axis, ptrel_axis, btagwp_axis, Hist.storage.Weight())
+                        _hist_dict["ptrel_"+tagger] = Hist.Hist(syst_axis, ptbin_axis, flav_axis, mujetdr_axis, ptrel_axis, btagwp_axis, Hist.storage.Weight())
                     if len(list(btag_wp_dict[year+"_"+campaign].keys()))==1:
-                        _hist_dict["ptrel_bCorrector"] = Hist.Hist(syst_axis, ptbin_axis, flav_axis, ptrel_axis, btagwp_axis, Hist.storage.Weight())
+                        _hist_dict["ptrel_bCorrector"] = Hist.Hist(syst_axis, ptbin_axis, flav_axis, mujetdr_axis, ptrel_axis, btagwp_axis, Hist.storage.Weight())
                 elif "System8" in workflow:
                     tagawj_axis = Hist.axis.IntCategory([0, 1], name="tagawj", label="Tagged away jet")
                     for tagger in btag_wp_dict[year+"_"+campaign]:
@@ -1056,7 +1069,7 @@ def histo_writter(pruned_ev, output, weights, systematics, isSyst, SF_map):
                         output["jeteta"].fill(syst, ptbin=flatten(pruned_ev.SelJet["jetPtBin"]), jeteta=flatten(pruned_ev.SelJet.eta), weight=flatten(jetweight))
                 elif "ptrel"==histname:
                     trkweight = ak.values_astype( weight*pruned_ev.TrkInc["jetWeight"]/pruned_ev.TrkInc["nTrkInc"], float, )
-                    output["ptrel"].fill(syst, ptbin=flatten(pruned_ev.TrkInc.jetPtBin), ptrel=flatten(pruned_ev.TrkInc.ptrel), weight=flatten(trkweight))
+                    output["ptrel"].fill(syst, ptbin=flatten(pruned_ev.TrkInc.jetPtBin), mujetdr=flatten(pruned_ev.TrkInc.muJetDR), ptrel=flatten(pruned_ev.TrkInc.ptrel), weight=flatten(trkweight))
             elif "jetPtBin" in pruned_ev.fields:
                 if "nPV"==histname:
                     output["nPV"].fill(syst, ptbin=pruned_ev["jetPtBin"], npv=pruned_ev.PV.npvsGood, weight=weight)
@@ -1068,11 +1081,17 @@ def histo_writter(pruned_ev, output, weights, systematics, isSyst, SF_map):
                     output["DR"].fill(syst, ptbin=pruned_ev["jetPtBin"], mujetdr=pruned_ev["muJetDR"], weight=weight)
                 elif "muopt"==histname:
                     output["muopt"].fill(syst, ptbin=pruned_ev["jetPtBin"], muopt=pruned_ev.SelMuo.pt, weight=weight)
+                elif "muonDR"==histname:
+                    output["muonDR"].fill(syst, ptbin=pruned_ev["jetPtBin"], flav=pruned_ev["jetFlavour"], ptrelcut=pruned_ev["ptrelcut"], mujetdr=pruned_ev["muJetDR"], weight=weight)
+                elif "awayJetBTagDiscriminant"==histname:
+                    output["awayJetBTagDiscriminant"].fill(syst, ptbin=pruned_ev["jetPtBin"], flav=pruned_ev["jetFlavour"], awayjetdrcut=(pruned_ev["awayJetDR"]>=1.5), btagdisc=pruned_ev["awayJetBTagDiscriminant"], weight=weight)
+                elif "awayJetDR"==histname:
+                    output["awayJetDR"].fill(syst, ptbin=pruned_ev["jetPtBin"], flav=pruned_ev["jetFlavour"], awayjetbtagcut=pruned_ev["awayJetBTagged"], awayjetdr=pruned_ev["awayJetDR"], weight=weight)
                 elif "ptrel_" in histname:
                     if "taggedAwayJet" in pruned_ev.fields:
                         output[histname].fill(syst=syst, ptbin=pruned_ev["jetPtBin"], flav=pruned_ev["jetFlavour"], ptrel=pruned_ev["ptrel"], btagwp=pruned_ev[histname.split("_")[1]], tagawj=pruned_ev["taggedAwayJet"], weight=weight)
                     else:
-                        output[histname].fill(syst=syst, ptbin=pruned_ev["jetPtBin"], flav=pruned_ev["jetFlavour"], ptrel=pruned_ev["ptrel"], btagwp=pruned_ev[histname.split("_")[1]], weight=weight)
+                        output[histname].fill(syst=syst, ptbin=pruned_ev["jetPtBin"], flav=pruned_ev["jetFlavour"], mujetdr=pruned_ev["muJetDR"], ptrel=pruned_ev["ptrel"], btagwp=pruned_ev[histname.split("_")[1]], weight=weight)
 
         if "dr_poslnegl" in output.keys():
             # DY histograms
