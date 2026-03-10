@@ -77,6 +77,81 @@ def jet_id(events, campaign, max_eta=2.5, min_pt=20):
             jetid & (events.Jet.muEF < 0.8) & (events.Jet.chEmEF < 0.8),
             jetid,
         )
+    elif campaign in ["UL16preVFP", "UL16postVFP"]: 
+        # https://twiki.cern.ch/twiki/bin/view/CMS/JetID13TeVUL#NanoAODv15
+        #bool Jet_passJetIdTight = false;
+        #if (abs(Jet_eta) <= 2.4)
+        #    Jet_passJetIdTight = (Jet_neHEF < 0.9) && (Jet_neEmEF < 0.9) && (Jet_chMultiplicity+Jet_neMultiplicity > 1) && (Jet_chHEF > 0.0) && (Jet_chMultiplicity > 0);
+        #else if (abs(Jet_eta) > 2.4 && abs(Jet_eta) <= 2.7)
+        #    Jet_passJetIdTight = (Jet_neHEF < 0.98) && (Jet_neEmEF < 0.99);
+        #else if (abs(Jet_eta) > 2.7 && abs(Jet_eta) <= 3.0)
+        #    Jet_passJetIdTight = Jet_neMultiplicity >= 1;
+        #else if (abs(Jet_eta) > 3.0)
+        #    Jet_passJetIdTight = (Jet_neMultiplicity > 2) && (Jet_neEmEF < 0.9);
+        #bool Jet_passJetIdTightLepVeto = false;
+        #if (abs(Jet_eta) <= 2.4) Jet_passJetIdTightLepVeto = Jet_passJetIdTight && (Jet_muEF < 0.8) && (Jet_chEmEF < 0.8);
+        #else Jet_passJetIdTightLepVeto = Jet_passJetIdTight;
+        jetid = ak.where(
+            abs(events.Jet.eta) <= 2.4,
+            ( (events.Jet.neHEF < 0.9) & (events.Jet.neEmEF < 0.9) & (events.Jet.chMultiplicity+events.Jet.neMultiplicity > 1) & (events.Jet.chHEF > 0.0) & (events.Jet.chMultiplicity > 0) ),
+            ak.where(
+                (abs(events.Jet.eta) > 2.4) & (abs(events.Jet.eta) <= 2.7),
+                ( (events.Jet.neHEF < 0.98) & (events.Jet.neEmEF < 0.99) ),
+                ak.where(
+                    (abs(events.Jet.eta) > 2.7) & (abs(events.Jet.eta) <= 3.0),
+                    (events.Jet.neMultiplicity >= 1),
+                    ak.where(
+                        (abs(events.Jet.eta) > 3.0),
+                        ( (events.Jet.neMultiplicity > 2) & (events.Jet.neEmEF < 0.9) ),
+                        ak.zeros_like(events.Jet.pt, dtype=bool),
+                    ),
+                ),
+            ),
+        )
+        #bool Jet_passJetIdTightLepVeto = false;
+        #if (abs(Jet_eta) <= 2.4) Jet_passJetIdTightLepVeto = Jet_passJetIdTight && (Jet_muEF < 0.8) && (Jet_chEmEF < 0.8);
+        #else Jet_passJetIdTightLepVeto = Jet_passJetIdTight;
+        jetid = ak.where(
+            np.abs(events.Jet.eta) <= 2.4,
+            jetid & (events.Jet.muEF < 0.8) & (events.Jet.chEmEF < 0.8),
+            jetid,
+        )
+    elif campaign in [ "UL17", "UL18"]:
+        # https://twiki.cern.ch/twiki/bin/view/CMS/JetID13TeVUL#NanoAODv15
+        #bool Jet_passJetIdTight = false;
+        #if (abs(Jet_eta) <= 2.6)
+        #  Jet_passJetIdTight = (Jet_neHEF < 0.9) && (Jet_neEmEF < 0.9) && (Jet_chMultiplicity+Jet_neMultiplicity > 1) && (Jet_chHEF > 0.0) && (Jet_chMultiplicity > 0);
+        #else if (abs(Jet_eta) > 2.6 && abs(Jet_eta) <= 2.7)
+        #  Jet_passJetIdTight = (Jet_neHEF < 0.90) && (Jet_neEmEF < 0.99);
+        #else if (abs(Jet_eta) > 2.7 && abs(Jet_eta) <= 3.0)
+        #  Jet_passJetIdTight = Jet_neHEF < 0.9999;
+        #else if (abs(Jet_eta) > 3.0)
+        #  Jet_passJetIdTight = (Jet_neMultiplicity > 2) && (Jet_neEmEF < 0.9);
+        jetid = ak.where(    
+            abs(events.Jet.eta) <= 2.6,
+            ( (events.Jet.neHEF < 0.9) & (events.Jet.neEmEF < 0.9) & (events.Jet.chMultiplicity+events.Jet.neMultiplicity > 1) & (events.Jet.chHEF > 0.0) & (events.Jet.chMultiplicity > 0) ),
+            ak.where(
+                (abs(events.Jet.eta) > 2.6) & (abs(events.Jet.eta) <= 2.7),
+                ( (events.Jet.neHEF < 0.90) & (events.Jet.neEmEF < 0.99) ),
+                ak.where(
+                    (abs(events.Jet.eta) > 2.7) & (abs(events.Jet.eta) <= 3.0),
+                    (events.Jet.neHEF < 0.9999),
+                    ak.where(
+                        (abs(events.Jet.eta) > 3.0),
+                        ( (events.Jet.neMultiplicity > 2) & (events.Jet.neEmEF < 0.9) ),
+                        ak.zeros_like(events.Jet.pt, dtype=bool),
+                    ),
+                ),
+            ),
+        )        
+        #bool Jet_passJetIdTightLepVeto = false;
+        #if (abs(Jet_eta) <= 2.7) Jet_passJetIdTightLepVeto = Jet_passJetIdTight && (Jet_muEF < 0.8) && (Jet_chEmEF < 0.8);
+        #else Jet_passJetIdTightLepVeto = Jet_passJetIdTight;
+        jetid = ak.where(
+            np.abs(events.Jet.eta) <= 2.7,
+            jetid & (events.Jet.muEF < 0.8) & (events.Jet.chEmEF < 0.8),
+            jetid,
+        )
     else:
         jetid = events.Jet.jetId >= 5
 
@@ -134,7 +209,7 @@ def softmu_mask(events, campaign, dxySigCut=0):
 
 def mu_idiso(events, campaign):
     mumask = (
-        (abs(events.Muon.eta) < 2.4)
+        (ab15(events.Muon.eta) < 2.4)
         & (events.Muon.tightId > 0.5)
         & (events.Muon.pfRelIso04_all <= 0.15)
     )
@@ -405,6 +480,158 @@ btag_wp_dict = {
         },
     },
     "2024_Summer24": {
+        "UParTAK4": {
+            "b": {
+                "No": 0.0,
+                "L": 0.0246,
+                "M": 0.1272,
+                "T": 0.4648,
+                "XT": 0.6298,
+                "XXT": 0.9739,
+            },
+            "c": {
+                "No": [0.0, 0.0],
+                "L": [0.086, 0.233],  # CvL, then CvB
+                "M": [0.291, 0.457],
+                "T": [0.650, 0.421],
+                "XT": [0.810, 0.736],
+            },
+        },
+    },
+    "2016_UL16preVFP": {
+        "UParTAK4": {
+            "b": {
+                "No": 0.0,
+                "L": 0.0246,
+                "M": 0.1272,
+                "T": 0.4648,
+                "XT": 0.6298,
+                "XXT": 0.9739,
+            },
+            "c": {
+                "No": [0.0, 0.0],
+                "L": [0.086, 0.233],  # CvL, then CvB
+                "M": [0.291, 0.457],
+                "T": [0.650, 0.421],
+                "XT": [0.810, 0.736],
+            },
+        },
+    },
+    "2016_UL16postVFP": {
+        "UParTAK4": {
+            "b": {
+                "No": 0.0,
+                "L": 0.0246,
+                "M": 0.1272,
+                "T": 0.4648,
+                "XT": 0.6298,
+                "XXT": 0.9739,
+            },
+            "c": {
+                "No": [0.0, 0.0],
+                "L": [0.086, 0.233],  # CvL, then CvB
+                "M": [0.291, 0.457],
+                "T": [0.650, 0.421],
+                "XT": [0.810, 0.736],
+            },
+        },
+    },
+    "2017_UL17": {
+        "UParTAK4": {
+            "b": {
+                "No": 0.0,
+                "L": 0.0246,
+                "M": 0.1272,
+                "T": 0.4648,
+                "XT": 0.6298,
+                "XXT": 0.9739,
+            },
+            "c": {
+                "No": [0.0, 0.0],
+                "L": [0.086, 0.233],  # CvL, then CvB
+                "M": [0.291, 0.457],
+                "T": [0.650, 0.421],
+                "XT": [0.810, 0.736],
+            },
+        },
+    },
+    "2018_UL18": {
+        "UParTAK4": {
+            "b": {
+                "No": 0.0,
+                "L": 0.0246,
+                "M": 0.1272,
+                "T": 0.4648,
+                "XT": 0.6298,
+                "XXT": 0.9739,
+            },
+            "c": {
+                "No": [0.0, 0.0],
+                "L": [0.086, 0.233],  # CvL, then CvB
+                "M": [0.291, 0.457],
+                "T": [0.650, 0.421],
+                "XT": [0.810, 0.736],
+            },
+        },
+    },
+    "2016_UL16v15": {
+        "UParTAK4": {
+            "b": {
+                "No": 0.0,
+                "L": 0.0246,
+                "M": 0.1272,
+                "T": 0.4648,
+                "XT": 0.6298,
+                "XXT": 0.9739,
+            },
+            "c": {
+                "No": [0.0, 0.0],
+                "L": [0.086, 0.233],  # CvL, then CvB
+                "M": [0.291, 0.457],
+                "T": [0.650, 0.421],
+                "XT": [0.810, 0.736],
+            },
+        },
+    },
+    "2016_UL16APVv15": {
+        "UParTAK4": {
+            "b": {
+                "No": 0.0,
+                "L": 0.0246,
+                "M": 0.1272,
+                "T": 0.4648,
+                "XT": 0.6298,
+                "XXT": 0.9739,
+            },
+            "c": {
+                "No": [0.0, 0.0],
+                "L": [0.086, 0.233],  # CvL, then CvB
+                "M": [0.291, 0.457],
+                "T": [0.650, 0.421],
+                "XT": [0.810, 0.736],
+            },
+        },
+    },
+    "2017_UL17v15": {
+        "UParTAK4": {
+            "b": {
+                "No": 0.0,
+                "L": 0.0246,
+                "M": 0.1272,
+                "T": 0.4648,
+                "XT": 0.6298,
+                "XXT": 0.9739,
+            },
+            "c": {
+                "No": [0.0, 0.0],
+                "L": [0.086, 0.233],  # CvL, then CvB
+                "M": [0.291, 0.457],
+                "T": [0.650, 0.421],
+                "XT": [0.810, 0.736],
+            },
+        },
+    },
+    "2018_UL18v15": {
         "UParTAK4": {
             "b": {
                 "No": 0.0,
