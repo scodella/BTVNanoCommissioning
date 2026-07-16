@@ -428,12 +428,12 @@ if __name__ == "__main__":
         index = args.samplejson.rfind("/") + 1
         sample_json = args.samplejson[index:]
         histoutdir = (
-            f"{outdirprefix}hists_{args.workflow}_{sample_json.rstrip('.json')}"
+            f"{outdirprefix}hists_{args.workflow}_{sample_json.replace('.json', '')}"
         )
-        outdir = f"{outdirprefix}arrays_{args.workflow}_{sample_json.rstrip('.json')}"
-        coffeaoutput = (
-            f'{histoutdir}/hists_{args.workflow}_{(sample_json).rstrip(".json")}.coffea'
+        outdir = (
+            f"{outdirprefix}arrays_{args.workflow}_{sample_json.replace('.json', '')}"
         )
+        coffeaoutput = f"{histoutdir}/hists_{args.workflow}_{sample_json.replace('.json', '')}.coffea"
     if not args.noHist:
         os.system(f"mkdir -p {histoutdir}")
     # load dataset

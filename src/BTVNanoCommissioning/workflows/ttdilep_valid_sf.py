@@ -72,6 +72,7 @@ class NanoProcessor(processor.ProcessorABC):
     def process_shift(self, events, sumws, shift_name):
         dataset = events.metadata["dataset"]
         isRealData = not hasattr(events, "genWeight")
+
         ## Create histograms
         output = {}
         if not self.noHist:
