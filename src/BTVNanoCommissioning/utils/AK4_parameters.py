@@ -244,7 +244,7 @@ correction_config = {
             "DC": "Cert_Collisions2023_366442_370790_Golden.json",
             "LUM": "puwei_Summer23.histo.root",
             "JME": {
-                "MC": "Summer23Prompt23_V4 Summer23Prompt23_RunCv1234_JRV2",
+                "MC": "Summer23Prompt23_V4 Summer23Prompt23_RunCv1234_JRV3",
                 "Run2023C": "Summer23Prompt23_V4",
             },
             "jetveto": {"Summer23Prompt23_RunC_V1": "jetvetomap"},
@@ -275,7 +275,7 @@ correction_config = {
             "DC": "Cert_Collisions2023_366442_370790_Golden.json",
             "LUM": "puwei_Summer23BPix.histo.root",
             "JME": {
-                "MC": "Summer23BPixPrompt23_V4 Summer23BPixPrompt23_RunD_JRV2",
+                "MC": "Summer23BPixPrompt23_V4 Summer23BPixPrompt23_RunD_JRV3",
                 "Run2023D": "Summer23BPixPrompt23_V4",
             },
             "JES_MC_year": "2023BPix",
@@ -306,14 +306,14 @@ correction_config = {
             "DC": "Cert_Collisions2024_378981_386951_Golden.json",
             "LUM": "puWeights_BCDEFGHI.json.gz",
             "JME": {
-                "MC": "Summer24Prompt24_V3 Summer24Prompt24_JRV1",
-                "Run2024C": "Summer24Prompt24_V3",
-                "Run2024D": "Summer24Prompt24_V3",
-                "Run2024E": "Summer24Prompt24_V3",
-                "Run2024F": "Summer24Prompt24_V3",
-                "Run2024G": "Summer24Prompt24_V3",
-                "Run2024H": "Summer24Prompt24_V3",
-                "Run2024I": "Summer24Prompt24_V3",
+                "MC": "Summer24Prompt24_V5 Summer24Prompt24_JRV2",
+                "Run2024C": "Summer24Prompt24_V5",
+                "Run2024D": "Summer24Prompt24_V5",
+                "Run2024E": "Summer24Prompt24_V5",
+                "Run2024F": "Summer24Prompt24_V5",
+                "Run2024G": "Summer24Prompt24_V5",
+                "Run2024H": "Summer24Prompt24_V5",
+                "Run2024I": "Summer24Prompt24_V5",
             },
             "jetveto": {"Summer24Prompt24_RunBCDEFGHI_V1": "jetvetomap"},
             "MUO": {
@@ -348,16 +348,15 @@ correction_config = {
             "LUM": "puWeights2025.json.gz",
             # Year-dependent JES regrouped uncertainties use the MC JEC campaign year,
             # not the data year.  Summer24 JECs have "_2024_" in the correction names.
-            "JES_MC_year": "2024",
             "JME": {
-                "MC": "Summer24Prompt24_V3 Summer24Prompt25_JRV1",
-                "Run2025C": "Winter25Prompt25_V3",
-                "Run2025D": "Winter25Prompt25_V3",
-                "Run2025E": "Winter25Prompt25_V3",
-                "Run2025F": "Winter25Prompt25_V3",
-                "Run2025G": "Winter25Prompt25_V3",
+                "MC": "Summer24Prompt25_V3 Summer24Prompt25_JRV2",
+                "Run2025C": "Summer24Prompt25_V3",
+                "Run2025D": "Summer24Prompt25_V3",
+                "Run2025E": "Summer24Prompt25_V3",
+                "Run2025F": "Summer24Prompt25_V3",
+                "Run2025G": "Summer24Prompt25_V3",
             },
-            "jetveto": {"Winter25Prompt25_RunCDEFG_V1": "jetvetomap"},
+            "jetveto": {"Summer24Prompt25_RunCDEFG_V1": "jetvetomap"},
             "MUO": {
                 "mu_ID": "NUM_TightID_DEN_TrackerMuons",
                 "mu_Iso": "NUM_TightPFIso_DEN_TightID",
@@ -378,9 +377,9 @@ correction_config = {
             # JME_MC: MC truth JECs must come from the Summer24 era (L2Relative differs).
             # jetveto: jetvetomap from Winter25 JME era.
             "cvmfs_override": {
-                "JME": "Run3-25Prompt-Winter25-NanoAODv15",
-                "JME_MC": "Run3-24CDEReprocessingFGHIPrompt-Summer24-NanoAODv15",
-                "jetveto": "Run3-25Prompt-Winter25-NanoAODv15",
+                "JME": "Run3-25Prompt-Summer24-NanoAODv15",
+                "JME_MC": "Run3-25Prompt-Summer24-NanoAODv15",
+                "jetveto": "Run3-25Prompt-Summer24-NanoAODv15",
             },
         },
     },
