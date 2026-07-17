@@ -42,7 +42,7 @@ def jet_id(events, campaign, max_eta=2.5, min_pt=20):
                 ),
             ),
         )
-    elif campaign in ["Winter24", "Summer24"]:
+    elif campaign in ["Winter24", "Summer24","Prompt25"]:
         # NanoV13 & NanoV14 & NanoV15
         barrel = (
             (events.Jet.neHEF < 0.99)
@@ -209,7 +209,7 @@ def softmu_mask(events, campaign, dxySigCut=0):
 
 def mu_idiso(events, campaign):
     mumask = (
-        (ab15(events.Muon.eta) < 2.4)
+        (abs(events.Muon.eta) < 2.4)
         & (events.Muon.tightId > 0.5)
         & (events.Muon.pfRelIso04_all <= 0.15)
     )
@@ -498,6 +498,25 @@ btag_wp_dict = {
             },
         },
     },
+    "2025_Prompt25": {
+        "UParTAK4": {
+            "b": {
+                "No": 0.0,
+                "L": 0.0246,
+                "M": 0.1272,
+                "T": 0.4648,
+                "XT": 0.6298,
+                "XXT": 0.9739,
+            },
+            "c": {
+                "No": [0.0, 0.0],
+                "L": [0.086, 0.233],  # CvL, then CvB
+                "M": [0.291, 0.457],
+                "T": [0.650, 0.421],
+                "XT": [0.810, 0.736],
+            },
+        },
+    },
     "2016_UL16preVFP": {
         "UParTAK4": {
             "b": {
@@ -556,82 +575,6 @@ btag_wp_dict = {
         },
     },
     "2018_UL18": {
-        "UParTAK4": {
-            "b": {
-                "No": 0.0,
-                "L": 0.0246,
-                "M": 0.1272,
-                "T": 0.4648,
-                "XT": 0.6298,
-                "XXT": 0.9739,
-            },
-            "c": {
-                "No": [0.0, 0.0],
-                "L": [0.086, 0.233],  # CvL, then CvB
-                "M": [0.291, 0.457],
-                "T": [0.650, 0.421],
-                "XT": [0.810, 0.736],
-            },
-        },
-    },
-    "2016_UL16v15": {
-        "UParTAK4": {
-            "b": {
-                "No": 0.0,
-                "L": 0.0246,
-                "M": 0.1272,
-                "T": 0.4648,
-                "XT": 0.6298,
-                "XXT": 0.9739,
-            },
-            "c": {
-                "No": [0.0, 0.0],
-                "L": [0.086, 0.233],  # CvL, then CvB
-                "M": [0.291, 0.457],
-                "T": [0.650, 0.421],
-                "XT": [0.810, 0.736],
-            },
-        },
-    },
-    "2016_UL16APVv15": {
-        "UParTAK4": {
-            "b": {
-                "No": 0.0,
-                "L": 0.0246,
-                "M": 0.1272,
-                "T": 0.4648,
-                "XT": 0.6298,
-                "XXT": 0.9739,
-            },
-            "c": {
-                "No": [0.0, 0.0],
-                "L": [0.086, 0.233],  # CvL, then CvB
-                "M": [0.291, 0.457],
-                "T": [0.650, 0.421],
-                "XT": [0.810, 0.736],
-            },
-        },
-    },
-    "2017_UL17v15": {
-        "UParTAK4": {
-            "b": {
-                "No": 0.0,
-                "L": 0.0246,
-                "M": 0.1272,
-                "T": 0.4648,
-                "XT": 0.6298,
-                "XXT": 0.9739,
-            },
-            "c": {
-                "No": [0.0, 0.0],
-                "L": [0.086, 0.233],  # CvL, then CvB
-                "M": [0.291, 0.457],
-                "T": [0.650, 0.421],
-                "XT": [0.810, 0.736],
-            },
-        },
-    },
-    "2018_UL18v15": {
         "UParTAK4": {
             "b": {
                 "No": 0.0,
@@ -886,6 +829,26 @@ met_filters = {
         ],
     },
     "Summer24": {
+        "data": [
+            "goodVertices",
+            "globalSuperTightHalo2016Filter",
+            "EcalDeadCellTriggerPrimitiveFilter",
+            "BadPFMuonFilter",
+            "BadPFMuonDzFilter",
+            "hfNoisyHitsFilter",
+            "eeBadScFilter",
+        ],
+        "mc": [
+            "goodVertices",
+            "globalSuperTightHalo2016Filter",
+            "EcalDeadCellTriggerPrimitiveFilter",
+            "BadPFMuonFilter",
+            "BadPFMuonDzFilter",
+            "hfNoisyHitsFilter",
+            "eeBadScFilter",
+        ],
+    },
+    "25Prompt": {
         "data": [
             "goodVertices",
             "globalSuperTightHalo2016Filter",

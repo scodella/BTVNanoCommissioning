@@ -50,7 +50,7 @@ def load_Campaign(self):
     self.triggerInfos['BTagMu_AK4DiJet170_Mu5'] = { 'jetPtRange' : [ 200.,  300. ], 'ptAwayJet' : 30., 'ptTriggerEmulation' : 200., 'jetTrigger' : 'PFJet140' }
     self.triggerInfos['BTagMu_AK4Jet300_Mu5']   = { 'jetPtRange' : [ 300., 1400. ], 'ptAwayJet' : 30., 'ptTriggerEmulation' :   0., 'jetTrigger' : 'PFJet260' }
    
-    if self._campaign=="Summer24":
+    if self._campaign=="Summer24" or self._campaign=="Prompt25":
         totalLuminosity = 106787.472039533859253
         self.triggerInfos['BTagMu_AK4DiJet20_Mu5']['relativeEffectiveLuminosity']     = 33.365124159121163/totalLuminosity
         self.triggerInfos['BTagMu_AK4DiJet20_Mu5']['jetRelativeEffectiveLuminosity']  = 0.216365419814463/totalLuminosity
@@ -93,7 +93,7 @@ def load_Campaign(self):
 
     ## bCorrector
     if len(list(btag_wp_dict[self._year+"_"+self._campaign].keys()))==1:
-        if self._campaign=="Summer24":
+        if self._campaign=="Summer24" or self._campaign=="Prompt25":
             self.bCorrectorDiscriminant = "btagDeepFlavB" 
             self.bCorrectorCut = 0.6708 
 
@@ -144,6 +144,7 @@ def load_Campaign(self):
     if self._year=="2022": self.ps_run_num = "355374_362760"
     elif self._year=="2023": self.ps_run_num = "366727_370790"
     elif self._year=="2024": self.ps_run_num = "378985_386951"
+    elif self._year=="2025": self.ps_run_num = "391668_398860"
 
 def pthat_safety_cut(ptHatSafetyCuts, pthat): # This kind of sucks!!!
     evt_zeros = ak.zeros_like(pthat)
@@ -218,7 +219,7 @@ class NanoProcessor(processor.ProcessorABC):
         ## Load corrections
         self.SF_map = load_SF(self._year, self._campaign)
         for sfm in list(self.SF_map.keys()):
-            if sfm!="campaign" and sfm!="PU" and "JME" not in sfm and "jetveto" not in sfm:
+            if sfm!="campaign" and sfm!="PU" and sfm!="LUM" and "JME" not in sfm and "jetveto" not in sfm:
                 del self.SF_map[sfm]
         load_Campaign(self) 
 
@@ -229,6 +230,10 @@ class NanoProcessor(processor.ProcessorABC):
     ## Apply corrections on momentum/mass on MET, Jet, Muon
     def process(self, events):
         events = missing_branch(events)
+        #if "workingPoints" in self.tag:
+        #    dummy = events.FatJetPFCand.pfCandIdx
+        #else:
+        #    dummy = events.JetPFCands.pf.trkQuality
         dummy = events.JetPFCands.pf.trkQuality
         vetoed_events, shifts = common_shifts(self, events)
 
@@ -272,10 +277,12 @@ class NanoProcessor(processor.ProcessorABC):
             output = dump_lumi(events[req_lumi], output)
 
         ##### (mu)jet selection
- 
+
+        maxEtaCut = 2.4 if int(self._year)<=2016 else 2.5
+
         if "workingPoints" in self.tag:
 
-            jet_sel = ak.fill_none( (events.Jet.pt>=30.) & (abs(events.Jet.eta)<2.5) & (jet_id(events, self._campaign)), False, axis=-1 )
+            jet_sel = ak.fill_none( (events.Jet.pt>=30.) & (abs(events.Jet.eta)<maxEtaCut) & (jet_id(events, self._campaign)), False, axis=-1 )
             event_jet = events.Jet[ jet_sel ]
             
             req_sel = (ak.num(event_jet.pt)>0 & ak.values_astype(events.PV.npvs>0, np.int32))
@@ -432,22 +439,22 @@ class NanoProcessor(processor.ProcessorABC):
                 if not isRealData:
                     pruned_ev["jetPtBin"] = ak.values_astype( pruned_ev["jetPtBin"]*(pruned_ev["SelJet"].pt<pthat_safety_cut(self.ptHatSafetyCuts, pruned_ev.Generator.binvar)), int,)
 
+                if isRealData:
+                    pruned_ev["jetFlavour"] = ak.zeros_like(pruned_ev["SelJet"].pt, dtype=int)
+                else:
+                    pruned_ev["jetFlavour"] = pruned_ev["SelJet"].hadronFlavour
+
                 if "Kinematics" in self.tag:
                     pruned_ev["PV"] = events.PV[event_level]
                     pruned_ev["muJetDR"] = pruned_ev.SelMuo.delta_r(pruned_ev.SelJet)
                     if "Optimization" in self.tag:
-                        pruned_ev["jetFlavour"] = pruned_ev.SelJet.hadronFlavour
                         pruned_ev["awayJetBTagDiscriminant"] = pruned_ev.AwayJet[self.btagAwayJetDiscriminant]
                         pruned_ev["awayJetBTagged"] = ak.values_astype( (pruned_ev.AwayJet[self.btagAwayJetDiscriminant]>=self.btagAwayJetCut), int,)
                         pruned_ev["awayJetDR"] = pruned_ev.AwayJet.delta_r(pruned_ev.SelJet)
-                        pruned_ev["ptrelcut"] = ak.values_astype( ((pruned_ev.SelMuo.cross(pruned_ev.SelJet).p/pruned_ev.SelJet.p)>=1.5), int,)
+                        pruned_ev["ptrel"] = pruned_ev.SelMuo.cross(pruned_ev.SelJet).p/pruned_ev.SelJet.p
 
                 elif "Templates" in self.tag:   
                     pruned_ev["ptrel"] = pruned_ev.SelMuo.cross(pruned_ev.SelJet).p/pruned_ev.SelJet.p
-                    if isRealData:
-                        pruned_ev["jetFlavour"] = ak.zeros_like(pruned_ev["SelJet"].pt, dtype=int)
-                    else:
-                        pruned_ev["jetFlavour"] = pruned_ev["SelJet"].hadronFlavour
                     wp_dict_campaign = btag_wp_dict[self._year+"_"+self._campaign]
                     for tagger in wp_dict_campaign:
                         pruned_ev[tagger] = ak.zeros_like(pruned_ev["SelJet"].pt)
@@ -466,7 +473,9 @@ class NanoProcessor(processor.ProcessorABC):
         ####################
         # Configure SFs
         weights = weight_manager(pruned_ev, self.SF_map, self.isSyst)
-        if "Light" in self.tag: 
+        if "workingPoints" in self.tag:
+            sample = "XXX/"
+        elif "Light" in self.tag: 
             light_jets["jetWeight"] = ak.values_astype( light_jets["jetWeight"]*(light_jets["jetPtBin"]>=1), float,)
             sample = "QCD_sf/"
         else:
