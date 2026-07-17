@@ -229,6 +229,7 @@ def config_parser(parser):
         default="Summer23",
         help="Dataset campaign, change the corresponding correction files",
     )
+    parser.add_argument("--selectionModifier", default="")
     parser.add_argument(
         "--isSyst",
         default="False",
@@ -528,7 +529,7 @@ if __name__ == "__main__":
         sys.exit(0)
 
     # load workflow
-    processor_instance = workflows[args.workflow](
+    proc_args = [
         args.year,
         args.campaign,
         outdir,
@@ -536,7 +537,11 @@ if __name__ == "__main__":
         args.isArray,
         args.noHist,
         args.chunk,
-    )
+    ]
+    if args.selectionModifier != "":
+        proc_args.append(args.selectionModifier)
+
+    processor_instance = workflows[args.workflow](*proc_args)
     setattr(processor_instance, "ttbar_reweights", args.ttbar_reweights)
 
     if args.skip_structure_validation:

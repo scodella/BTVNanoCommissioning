@@ -74,6 +74,7 @@ sample_mergemap = {
         "ST_s-channel_4f_leptonDecays_TuneCP5_13TeV-amcatnlo-pythia8",
         "TBbartoLNu-s-channel_TuneCP5_13p6TeV_powheg-pythia8",
         "TbarBtoLNu-s-channel_TuneCP5_13p6TeV_powheg-pythia8",
+        "ST_t-channel_antitop_4f_InclusiveDecays_TuneCP5_13TeV-powheg-madspin-pythia8",
     ],
     "tt+X": [
         "TTLNu-1Jets_TuneCP5_13p6TeV_amcatnloFXFX-pythia8",
@@ -145,6 +146,8 @@ sample_mergemap = {
         "WtoENu-2Jets_TuneCP5_13p6TeV_amcatnloFXFX-pythia8",
         "WtoMuNu-2Jets_TuneCP5_13p6TeV_amcatnloFXFX-pythia8",
         "WtoTauNu-2Jets_TuneCP5_13p6TeV_amcatnloFXFX-pythia8",
+        # run2
+        "WJetsToLNu_TuneCP5_13TeV-madgraphMLM-pythia8",
         # jet and lepton binned samples
         "WtoENu-2Jets_Bin-0J_TuneCP5_13p6TeV_amcatnloFXFX-pythia8",
         "WtoENu-2Jets_Bin-1J_TuneCP5_13p6TeV_amcatnloFXFX-pythia8",
@@ -173,6 +176,9 @@ sample_mergemap = {
         "DYto2Mu-2Jets_Bin-MLL-50_TuneCP5_13p6TeV_amcatnloFXFX-pythia8",
         "DYto2Tau-2Jets_Bin-MLL-10to50_TuneCP5_13p6TeV_amcatnloFXFX-pythia8",
         "DYto2Tau-2Jets_Bin-MLL-50_TuneCP5_13p6TeV_amcatnloFXFX-pythia8",
+        # Run 2
+        "DYJetsToLL_M-50_TuneCP5_13TeV-amcatnloFXFX-pythia8",
+        "DYJetsToLL_M-10to50_TuneCP5_13TeV-amcatnloFXFX-pythia8",
     ],
     # QCD
     "QCD": [
@@ -228,6 +234,17 @@ sample_mergemap = {
         "QCD_Bin-PT-2000to2500_TuneCP5_13p6TeV_pythia8",
         "QCD_Bin-PT-2500to3000_TuneCP5_13p6TeV_pythia8",
         "QCD_Bin-PT-3000_TuneCP5_13p6TeV_pythia8",
+        # Run 2:
+        "QCD_Pt-30To50_MuEnrichedPt5_TuneCP5_13TeV-pythia8",
+        "QCD_Pt-50To80_MuEnrichedPt5_TuneCP5_13TeV-pythia8",
+        "QCD_Pt-80To120_MuEnrichedPt5_TuneCP5_13TeV-pythia8",
+        "QCD_Pt-120To170_MuEnrichedPt5_TuneCP5_13TeV-pythia8",
+        "QCD_Pt-170To300_MuEnrichedPt5_TuneCP5_13TeV-pythia8",
+        "QCD_Pt-300To470_MuEnrichedPt5_TuneCP5_13TeV-pythia8",
+        "QCD_Pt-470To600_MuEnrichedPt5_TuneCP5_13TeV-pythia8",
+        "QCD_Pt-600To800_MuEnrichedPt5_TuneCP5_13TeV-pythia8",
+        "QCD_Pt-800To1000_MuEnrichedPt5_TuneCP5_13TeV-pythia8",
+        "QCD_Pt-1000_MuEnrichedPt5_TuneCP5_13TeV-pythia8",
     ],
     # QCD muon enriched
     "QCD($\\mu$)": [
