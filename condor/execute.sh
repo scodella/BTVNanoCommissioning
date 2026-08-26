@@ -1,6 +1,7 @@
-#!/bin/bash -xe
+#!/bin/bash -x
 
 JOBID=$1
+NCPU=$2
 
 export HOME=`pwd`
 if [ -d /afs/cern.ch/user/${USER:0:1}/$USER ]; then
@@ -24,7 +25,14 @@ export HOME=`pwd`
 echo "Setting up mamba environment"
 if [[ ${ARGS[remoteRepo]} != "" ]]; then
     echo "remoteRepo is set to ${ARGS[remoteRepo]}"
-    wget -L micro.mamba.pm/install.sh
+    for i in {1..10}; do
+        wget -L micro.mamba.pm/install.sh
+        if [ $? -eq 0 ]; then
+            break
+        fi
+	echo "Failed attempt #"$i" to download mamba installer. Will retry."
+        sleep 30
+    done
     chmod +x install.sh
     ## FIXME parsing arguments does not work. will use defaults in install.sh instead, see https://github.com/mamba-org/micromamba-releases/blob/main/install.sh 
     ## Tried solutions listed in https://stackoverflow.com/questions/14392525/passing-arguments-to-an-interactive-program-non-interactively
@@ -54,9 +62,8 @@ if [ ! -f $WORKDIR/BTVNanoCommissioning.tar.gz ]; then
 else
     tar xaf $WORKDIR/BTVNanoCommissioning.tar.gz
 fi
-rm -rf src/BTVNanoCommissioning/jsonpog-integration
-ln -s /cvmfs/cms.cern.ch/rsync/cms-nanoAOD/jsonpog-integration src/BTVNanoCommissioning/jsonpog-integration  # link jsonpog-integration
 
+pip install "correctionlib<2.8"
 pip install -e .
 
 ## other dependencies
@@ -81,8 +88,16 @@ for key in  isArray noHist overwrite skipbadfiles; do
 done
 OPTS="$OPTS --output ${ARGS[output]//.coffea/_$JOBID.coffea}"  # add a suffix to output file name
 OPTS="$OPTS --json sample.json"  # use the sample json for this JOBID
-OPTS="$OPTS --worker 1"  # use number of worker = 1
-OPTS="$OPTS --executor iterative"
+
+# Check the number of CPUs requested and set the worker accordingly.
+# If nCPU > 1, use futures executor with nCPU workers. If nCPU = 1, use iterative executor with 1 worker.
+if [ $NCPU -gt 1 ]; then
+    OPTS="$OPTS --worker $NCPU"  # use number of worker = nCPU
+    OPTS="$OPTS --executor futures"
+else
+    OPTS="$OPTS --worker 1"  # use number of worker = 1
+    OPTS="$OPTS --executor iterative"
+fi
 
 # Launch
 echo "Now launching: python runner.py $OPTS"

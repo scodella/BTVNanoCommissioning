@@ -426,7 +426,7 @@ def histogrammer(events, workflow, year="2022", campaign="Summer22"):
             )
     elif "workingPoints" in workflow:
         obj_list = []
-        btagdisc_axis = Hist.axis.Regular(11000, 0., 1.1, name="btagdisc", label="b-tagging discriminant")
+        btagdisc_axis = Hist.axis.Regular(22000, -1.1, 1.1, name="btagdisc", label="b-tagging discriminant")
         for tagger in btag_wp_dict[year+"_"+campaign]:
             _hist_dict["btagdisc_"+tagger] = Hist.Hist(syst_axis, flav_axis, btagdisc_axis, Hist.storage.Weight())
         return _hist_dict
@@ -443,13 +443,16 @@ def histogrammer(events, workflow, year="2022", campaign="Summer22"):
                     npv_axis = Hist.axis.Integer(0, 100, name="npv", label="N PVs")
                     _hist_dict["nPV"] = Hist.Hist(syst_axis, ptbin_axis, npv_axis, Hist.storage.Weight())
                     mujetdr_axis = Hist.axis.Regular(20, 0, 0.5, name="mujetdr", label="DeltaR")
-                    _hist_dict["DR"] = Hist.Hist(syst_axis, ptbin_axis, mujetdr_axis, Hist.storage.Weight())
+                    _hist_dict["DR"] = Hist.Hist(syst_axis, ptbin_axis, flav_axis, mujetdr_axis, Hist.storage.Weight())
                     muopt_axis = Hist.axis.Regular(20, 0., 100., name="muopt", label="mu p_{T} [GeV]")
-                    _hist_dict["muopt"] = Hist.Hist(syst_axis, ptbin_axis, muopt_axis, Hist.storage.Weight())
+                    _hist_dict["muopt"] = Hist.Hist(syst_axis, ptbin_axis, flav_axis, muopt_axis, Hist.storage.Weight())
                 else:
                     mujetdr_axis = Hist.axis.Regular(20, 0, 0.5, name="mujetdr", label="DeltaR")
+                    ptrel_axis = Hist.axis.Regular(50, 0., 4., name="ptrel", label="p_{T}^{rel} [GeV]")
                     ptrelcut_axis = Hist.axis.IntCategory([0, 1], name="ptrelcut", label="pTrel")
+                    mujetdrcut_axis = Hist.axis.IntCategory([0, 1], name="mujetdrcut", label="DeltaR")
                     _hist_dict["muonDR"] = Hist.Hist(syst_axis, ptbin_axis, flav_axis, ptrelcut_axis, mujetdr_axis, Hist.storage.Weight())
+                    _hist_dict["ptrel"] = Hist.Hist(syst_axis, ptbin_axis, flav_axis, mujetdrcut_axis, ptrel_axis, Hist.storage.Weight())
                     awayjetbtagdisc_axis = Hist.axis.Regular(50, 0., 1., name="btagdisc", label="btagdisc")
                     awayjetdr_axis = Hist.axis.Regular(30, 0., 3., name="awayjetdr", label="DeltaR")
                     awayjetbtagcut_axis = Hist.axis.IntCategory([0, 1], name="awayjetbtagcut", label="awayjetbtagcut")
@@ -1078,11 +1081,13 @@ def histo_writter(pruned_ev, output, weights, systematics, isSyst, SF_map):
                 elif "jeteta"==histname:
                     output["jeteta"].fill(syst, ptbin=pruned_ev["jetPtBin"], jeteta=pruned_ev.SelJet.eta, weight=weight)
                 elif "DR"==histname:
-                    output["DR"].fill(syst, ptbin=pruned_ev["jetPtBin"], mujetdr=pruned_ev["muJetDR"], weight=weight)
+                    output["DR"].fill(syst, ptbin=pruned_ev["jetPtBin"], flav=pruned_ev["jetFlavour"], mujetdr=pruned_ev["muJetDR"], weight=weight)
                 elif "muopt"==histname:
-                    output["muopt"].fill(syst, ptbin=pruned_ev["jetPtBin"], muopt=pruned_ev.SelMuo.pt, weight=weight)
+                    output["muopt"].fill(syst, ptbin=pruned_ev["jetPtBin"], flav=pruned_ev["jetFlavour"], muopt=pruned_ev.SelMuo.pt, weight=weight)
                 elif "muonDR"==histname:
-                    output["muonDR"].fill(syst, ptbin=pruned_ev["jetPtBin"], flav=pruned_ev["jetFlavour"], ptrelcut=pruned_ev["ptrelcut"], mujetdr=pruned_ev["muJetDR"], weight=weight)
+                    output["muonDR"].fill(syst, ptbin=pruned_ev["jetPtBin"], flav=pruned_ev["jetFlavour"], ptrelcut=(pruned_ev["ptrel"]>=1.5), mujetdr=pruned_ev["muJetDR"], weight=weight)
+                elif "ptrel"==histname:
+                    output["ptrel"].fill(syst, ptbin=pruned_ev["jetPtBin"], flav=pruned_ev["jetFlavour"], mujetdrcut=(pruned_ev["muJetDR"]>=0.1), ptrel=pruned_ev["ptrel"], weight=weight)
                 elif "awayJetBTagDiscriminant"==histname:
                     output["awayJetBTagDiscriminant"].fill(syst, ptbin=pruned_ev["jetPtBin"], flav=pruned_ev["jetFlavour"], awayjetdrcut=(pruned_ev["awayJetDR"]>=1.5), btagdisc=pruned_ev["awayJetBTagDiscriminant"], weight=weight)
                 elif "awayJetDR"==histname:

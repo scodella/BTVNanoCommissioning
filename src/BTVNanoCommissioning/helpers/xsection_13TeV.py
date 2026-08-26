@@ -54,6 +54,14 @@ xsection_13TeV = [
         "energy": "13",
     },
     {
+        "id": "placeHolderForWorkingPoints",
+        "process_name": "QCD_Pt_80to120_TuneCP5_13TeV_pythia8",
+        "cross_section": "1",
+        "total_uncertainty": "1",
+        "DAS": "/QCD_Pt_80to120_TuneCP5_13TeV_pythia8/XXX/MINIAODSIM",
+        "energy": "13",
+    },
+    {
         "id": "5b44aa73f368576cbd3d4d07",
         "process_name": "QCD_Pt-15To20_MuEnrichedPt5_TuneCP5_13TeV_pythia8",
         "cross_section": "3820000",
