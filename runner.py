@@ -22,6 +22,121 @@ def validate(file):
         return file
 
 
+def validate_dataset_structure(fileset, max_files_per_sample=None):
+    """Check dataset files and return a filtered fileset with only valid files."""
+    import uproot
+    import logging
+    from copy import deepcopy
+
+    if max_files_per_sample is not None and max_files_per_sample <= 0:
+        max_files_per_sample = None
+
+    # Critical branches that must be present
+    required_branches = [
+        "Jet_pt",
+        "Muon_pt",
+        "Electron_pt",
+        "PV_npvsGood",
+        "Jet_eta",
+        "Jet_phi",
+        "Muon_eta",
+        "Muon_phi",
+        "SV_pt",
+    ]
+    optional_met_branches = ["MET_pt", "PuppiMET_pt", "PFMET_pt"]
+
+    filtered_fileset = deepcopy(fileset)
+
+    if max_files_per_sample is not None:
+        print(
+            f"Fast validation enabled: checking at most {max_files_per_sample} file(s) per sample."
+        )
+
+    # Check each sample in the fileset
+    for sample_name, files in fileset.items():
+        # In fast mode start by assuming all files are valid and only drop the ones we check and find broken.
+        fast_mode = max_files_per_sample is not None
+        valid_files = list(files) if fast_mode else []
+
+        files_to_check = files
+        if fast_mode:
+            files_to_check = files[:max_files_per_sample]
+
+        # Check each file in the sample
+        for filename in files_to_check:
+            try:
+                # print(f"Validating file: {filename}")
+                file = uproot.open(filename)
+                events = file["Events"]
+                branches = set(events.keys())
+
+                # Check branch count
+                if len(branches) < 20:
+                    print(
+                        f"WARNING: File has too few branches ({len(branches)}): {filename}"
+                    )
+                    # print(f"Branches present: {branches}")
+                    if fast_mode and filename in valid_files:
+                        valid_files.remove(filename)
+                    continue
+
+                # Check required branches
+                missing = [b for b in required_branches if b not in branches]
+                if missing:
+                    print(
+                        f"WARNING: File missing critical branches {missing}: {filename}"
+                    )
+                    if fast_mode and filename in valid_files:
+                        valid_files.remove(filename)
+                    continue
+
+                if not any(met in branches for met in optional_met_branches):
+                    print(
+                        "WARNING: File missing MET branch; expected one of "
+                        f"{optional_met_branches}: {filename}"
+                    )
+                    if fast_mode and filename in valid_files:
+                        valid_files.remove(filename)
+                    continue
+
+                # Check event count
+                if len(events) < 10:
+                    print(
+                        f"WARNING: File has too few events ({len(events)}): {filename}"
+                    )
+                    if fast_mode and filename in valid_files:
+                        valid_files.remove(filename)
+                    continue
+
+                # File passed all checks
+                if not fast_mode:
+                    valid_files.append(filename)
+                # print(f"File validation successful: {filename}")
+
+            except Exception as e:
+                print(f"ERROR validating file: {filename}, {e}")
+                if fast_mode and filename in valid_files:
+                    valid_files.remove(filename)
+                continue
+
+        # Update the filtered fileset with valid files
+        if valid_files:
+            filtered_fileset[sample_name] = valid_files
+        else:
+            # Remove the sample if no valid files
+            del filtered_fileset[sample_name]
+
+    # Summary
+    if len(filtered_fileset) == 0:
+        print("WARNING: All files in dataset failed validation!")
+        return None
+    else:
+        print(
+            f"Dataset validation complete. {len(filtered_fileset)} valid samples remaining."
+        )
+        return filtered_fileset
+
+
 def check_port(port):
     import socket
 
@@ -45,9 +160,6 @@ def retry_handler(exception, task_record):
 
 
 ## From condor/submitter.py https://github.com/cms-btv-pog/BTVNanoCommissioning/blob/9edb9ed6bb0b28730b8de9e5aa1142ec4fdf74b7/condor/submitter.py
-# create t
-
-
 def make_tarfile(output_filename, source_dir, exclude_dirs=[]):
     import tarfile
 
@@ -125,12 +237,32 @@ def config_parser(parser):
         default="Summer23",
         help="Dataset campaign, change the corresponding correction files",
     )
+    parser.add_argument("--selectionModifier", default="")
     parser.add_argument(
         "--isSyst",
         default="False",
         type=str,
-        choices=["False", "all", "weight_only", "JERC_split", "JP_MC"],
-        help="Run with systematics, all, weights_only(no JERC uncertainties included),JERC_split, None",
+        choices=[
+            "False",
+            "all",
+            "weight_only",
+            "JEC_full",
+            "JEC_reduced",
+            "JEC_reduced_JER_split",
+            "JEC_total",
+            "JP_MC",
+        ],
+        help="Run with systematics (default: %(default)s)",
+    )
+    parser.add_argument(
+        "--ttbar-reweights",
+        default="none",
+        choices=["none", "hdamp_ml", "full"],
+        help=(
+            "Enable additional ttbar event reweights in correction.py. "
+            "'hdamp_ml' applies hdamp ONNX up/down; 'full' additionally reserves "
+            "hooks for frag/decay reweights."
+        ),
     )
     parser.add_argument("--isArray", action="store_true", help="Output root files")
     parser.add_argument(
@@ -249,6 +381,18 @@ def debug_parser(parser):
         "--only", type=str, default=None, help="Only process specific dataset or file"
     )
     parser.add_argument(
+        "--skip-structure-validation",
+        action="store_true",
+        help="Skip the pre-flight branch/event checks on the sample list.",
+    )
+    parser.add_argument(
+        "--validate-files-per-sample",
+        type=int,
+        default=None,
+        metavar="N",
+        help="Only inspect the first N files per sample during pre-flight validation (default: all).",
+    )
+    parser.add_argument(
         "--limit",
         type=int,
         default=None,
@@ -276,6 +420,7 @@ if __name__ == "__main__":
     args = parser.parse_args()
     if args.isSyst == "False":
         args.isSyst = False
+    os.environ["BTV_TTBAR_REWEIGHTS"] = args.ttbar_reweights
     print("Running with the following options:")
     print(args)
     ogoutput = args.output
@@ -292,13 +437,14 @@ if __name__ == "__main__":
         index = args.samplejson.rfind("/") + 1
         sample_json = args.samplejson[index:]
         histoutdir = (
-            f"{outdirprefix}hists_{args.workflow}_{sample_json.rstrip('.json')}"
+            f"{outdirprefix}hists_{args.workflow}_{sample_json.replace('.json', '')}"
         )
-        outdir = f"{outdirprefix}arrays_{args.workflow}_{sample_json.rstrip('.json')}"
-        coffeaoutput = (
-            f'{histoutdir}/hists_{args.workflow}_{(sample_json).rstrip(".json")}.coffea'
+        outdir = (
+            f"{outdirprefix}arrays_{args.workflow}_{sample_json.replace('.json', '')}"
         )
-    os.system(f"mkdir -p {histoutdir}")
+        coffeaoutput = f"{histoutdir}/hists_{args.workflow}_{sample_json.replace('.json', '')}.coffea"
+    if not args.noHist:
+        os.system(f"mkdir -p {histoutdir}")
     # load dataset
     with open(args.samplejson) as f:
         sample_dict = json.load(f)
@@ -334,7 +480,7 @@ if __name__ == "__main__":
             coffeaoutput = coffeaoutput.replace(".coffea", f"_{key}.coffea")
         elif "*" in args.only:  # wildcard for datasets
             _new_dict = {}
-            print("Will only proces the following datasets:")
+            print("Will only process the following datasets:")
             for k, v in sample_dict.items():
                 if args.only.replace("*", "") in k:
                     print("    ", k)
@@ -344,6 +490,20 @@ if __name__ == "__main__":
             for key in sample_dict.keys():
                 if args.only in sample_dict[key]:
                     sample_dict = dict([(key, [args.only])])
+
+    empty_samples = [sample for sample, files in sample_dict.items() if len(files) == 0]
+    if empty_samples:
+        print("Warning: dropping empty datasets from sample JSON:")
+        for sample in empty_samples:
+            print(f"  {sample}")
+        sample_dict = {
+            sample: files for sample, files in sample_dict.items() if len(files) > 0
+        }
+
+    if len(sample_dict) == 0:
+        raise RuntimeError(
+            f"No input files left to process after filtering {args.samplejson}."
+        )
 
     # Scan if files can be opened
     if args.validate:
@@ -391,7 +551,7 @@ if __name__ == "__main__":
         sys.exit(0)
 
     # load workflow
-    processor_instance = workflows[args.workflow](
+    proc_args = [
         args.year,
         args.campaign,
         outdir,
@@ -399,7 +559,35 @@ if __name__ == "__main__":
         args.isArray,
         args.noHist,
         args.chunk,
-    )
+    ]
+    if args.selectionModifier != "":
+        proc_args.append(args.selectionModifier)
+
+    processor_instance = workflows[args.workflow](*proc_args)
+    setattr(processor_instance, "ttbar_reweights", args.ttbar_reweights)
+
+    if args.skip_structure_validation:
+        print("Skipping dataset structure validation (--skip-structure-validation).")
+        filtered_sample_dict = sample_dict
+    else:
+        filtered_sample_dict = validate_dataset_structure(
+            sample_dict, args.validate_files_per_sample
+        )
+
+    if filtered_sample_dict is None:
+        print(f"Creating empty output file for incompatible dataset: {args.samplejson}")
+        # Create minimal empty output
+        from coffea.util import save
+
+        empty_output = {}  # Minimal dict output
+        outname = coffeaoutput
+        os.makedirs(os.path.dirname(outname), exist_ok=True)
+        save(empty_output, outname)
+        print(f"Empty output file created successfully at {outname}")
+        sys.exit(0)  # Exit with success code
+    else:
+        # Continue with processing using the filtered_sample_dict
+        sample_dict = filtered_sample_dict
 
     ## create tmp directory and check file exist or not
     from os import path
@@ -448,11 +636,11 @@ if __name__ == "__main__":
             0
         ]
         condor_extra = [
+            f"export PATH={pathvar}:$PATH",
             f'source {os.environ["HOME"]}/.bashrc',
         ]
         if "brux" in args.executor:
             job_script_prologue.append(f"cd {os.getcwd()}")
-            condor_extra.append(f"export PATH={pathvar}:$PATH")
         else:
             condor_extra.append(f"cd {os.getcwd()}")
 
@@ -471,12 +659,12 @@ if __name__ == "__main__":
                     condor_extra.append(f'conda activate {os.environ["CONDA_PREFIX"]}')
                 else:
                     condor_extra.append(
-                        f"micromamba activate {os.environ['MAMBA_EXE']}"
+                        f"micromamba activate {os.environ['CONDA_PREFIX']}"
                     )
             elif conda_available:
                 condor_extra.append(f'conda activate {os.environ["CONDA_PREFIX"]}')
             elif mamba_available:
-                condor_extra.append(f"micromamba activate {os.environ['MAMBA_EXE']}")
+                condor_extra.append(f"micromamba activate {os.environ['CONDA_PREFIX']}")
             else:
                 # Handle the case when neither Conda nor Micromamba is available
                 print(
@@ -532,13 +720,14 @@ if __name__ == "__main__":
                         raise Exception("Invalid input, exiting")
 
                 if not skip_tar:
+                    jobdirs = [d for d in os.listdir(base_dir) if d.startswith("jobs_")]
                     make_tarfile(
                         "BTVNanoCommissioning.tar.gz",
                         base_dir,
                         exclude_dirs=[
-                            "jsonpog-integration",
                             "BTVNanoCommissioning.egg-info",
-                        ],
+                        ]
+                        + jobdirs,
                     )
             import shutil
 
@@ -951,7 +1140,10 @@ if __name__ == "__main__":
             if "brux" in args.executor:
                 cluster.adapt(minimum=args.scaleout, maximum=336)
             else:
-                cluster.adapt(minimum=args.scaleout)
+                # Cap the maximum number of workers at args.scaleout. Without an
+                # explicit maximum, dask's adaptive scaler grows the worker count
+                # without bound and floods the schedd, tripping MAX_JOBS_PER_OWNER.
+                cluster.adapt(minimum=1, maximum=args.scaleout)
             client = Client(cluster)
             print("Waiting for at least one worker...")
             client.wait_for_workers(1)

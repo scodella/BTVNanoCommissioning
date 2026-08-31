@@ -10,6 +10,7 @@ on:
     - 'src/BTVNanoCommissioning/helpers/definitions.py'
     - 'src/BTVNanoCommissioning/utils/*'
     - '.github/workflows/ctag_ttbar_workflow.yml'
+    - 'runner.py'
   pull_request_target:
     branches: [ master ]
     paths:
@@ -19,6 +20,7 @@ on:
     - 'src/BTVNanoCommissioning/helpers/definitions.py'
     - 'src/BTVNanoCommissioning/utils/*'
     - '.github/workflows/ctag_ttbar_workflow.yml'
+    - 'runner.py'
   workflow_dispatch:
 
 jobs:
@@ -109,10 +111,11 @@ jobs:
           -certdir /cvmfs/grid.cern.ch/etc/grid-security/certificates/ \
           -vomses $X509_VOMSES \
           --valid 12:00 \
-          --ignorewarn
+          --ignorewarn || true
         
         # Verify proxy was created
-        voms-proxy-info -all
+        voms-proxy-info -all || true
+        test -f /tmp/x509up_u$(id -u)
         
     
     - name: Install Repo
@@ -128,8 +131,8 @@ jobs:
         fi
         if [[ $string == *"ci:skip syst"* ]]; then
             opts=$(echo "$opts" | sed 's/--isSyst all//g')
-        elif [[ $string == *"ci:JERC_split"* ]]; then
-            opts=$(echo "$opts" | sed 's/--isSyst all/--isSyst JERC_split/g')
+        elif [[ $string == *"ci:JEC_reduced"* ]]; then
+            opts=$(echo "$opts" | sed 's/--isSyst all/--isSyst JEC_reduced/g')
         elif [[ $string == *"ci:weight_only"* ]]; then
             opts=$(echo "$opts" | sed 's/--isSyst all/--isSyst weight_only/g') 
         fi
@@ -143,8 +146,8 @@ jobs:
         fi
         if [[ $string == *"ci:skip syst"* ]]; then
             opts=$(echo "$opts" | sed 's/--isSyst all//g')
-        elif [[ $string == *"ci:JERC_split"* ]]; then
-            opts=$(echo "$opts" | sed 's/--isSyst all/--isSyst JERC_split/g')
+        elif [[ $string == *"ci:JEC_reduced"* ]]; then
+            opts=$(echo "$opts" | sed 's/--isSyst all/--isSyst JEC_reduced/g')
         elif [[ $string == *"ci:weight_only"* ]]; then
             opts=$(echo "$opts" | sed 's/--isSyst all/--isSyst weight_only/g') 
         fi 
@@ -158,8 +161,8 @@ jobs:
         fi
         if [[ $string == *"ci:skip syst"* ]]; then
             opts=$(echo "$opts" | sed 's/--isSyst all//g')
-        elif [[ $string == *"ci:JERC_split"* ]]; then
-            opts=$(echo "$opts" | sed 's/--isSyst all/--isSyst JERC_split/g')
+        elif [[ $string == *"ci:JEC_reduced"* ]]; then
+            opts=$(echo "$opts" | sed 's/--isSyst all/--isSyst JEC_reduced/g')
         elif [[ $string == *"ci:weight_only"* ]]; then
             opts=$(echo "$opts" | sed 's/--isSyst all/--isSyst weight_only/g') 
         fi 
@@ -172,8 +175,8 @@ jobs:
         fi
         if [[ $string == *"ci:skip syst"* ]]; then
             opts=$(echo "$opts" | sed 's/--isSyst all//g')
-        elif [[ $string == *"ci:JERC_split"* ]]; then
-            opts=$(echo "$opts" | sed 's/--isSyst all/--isSyst JERC_split/g')
+        elif [[ $string == *"ci:JEC_reduced"* ]]; then
+            opts=$(echo "$opts" | sed 's/--isSyst all/--isSyst JEC_reduced/g')
         elif [[ $string == *"ci:weight_only"* ]]; then
             opts=$(echo "$opts" | sed 's/--isSyst all/--isSyst weight_only/g') 
         fi
@@ -186,8 +189,8 @@ jobs:
         fi
         if [[ $string == *"ci:skip syst"* ]]; then
             opts=$(echo "$opts" | sed 's/--isSyst all//g')
-        elif [[ $string == *"ci:JERC_split"* ]]; then
-            opts=$(echo "$opts" | sed 's/--isSyst all/--isSyst JERC_split/g')
+        elif [[ $string == *"ci:JEC_reduced"* ]]; then
+            opts=$(echo "$opts" | sed 's/--isSyst all/--isSyst JEC_reduced/g')
         elif [[ $string == *"ci:weight_only"* ]]; then
             opts=$(echo "$opts" | sed 's/--isSyst all/--isSyst weight_only/g') 
         fi

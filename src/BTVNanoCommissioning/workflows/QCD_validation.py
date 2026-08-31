@@ -1,8 +1,12 @@
-import collections, numpy as np, awkward as ak, os
+import numpy as np
+import awkward as ak
+import os
 from coffea import processor
-from coffea.analysis_tools import Weights
-from BTVNanoCommissioning.helpers.func import flatten, update, dump_lumi
-from BTVNanoCommissioning.utils.histogrammer import histogrammer, histo_writter
+from BTVNanoCommissioning.helpers.func import update, dump_lumi
+from BTVNanoCommissioning.utils.histogramming.histogrammer import (
+    histogrammer,
+    histo_writter,
+)
 from BTVNanoCommissioning.utils.array_writer import array_writer
 from BTVNanoCommissioning.helpers.update_branch import missing_branch
 from BTVNanoCommissioning.utils.correction import (
@@ -10,6 +14,7 @@ from BTVNanoCommissioning.utils.correction import (
     load_SF,
     weight_manager,
     common_shifts,
+    reweighting,
 )
 from BTVNanoCommissioning.utils.selection import jet_cut, HLT_helper
 
@@ -46,22 +51,46 @@ class NanoProcessor(processor.ProcessorABC):
 
     def process(self, events):
         events = missing_branch(events)
+        sumws = reweighting(events, self.isSyst)
         vetoed_events, shifts = common_shifts(self, events)
 
         return processor.accumulate(
-            self.process_shift(update(vetoed_events, collections), name)
+            self.process_shift(update(vetoed_events, collections), sumws, name)
             for collections, name in shifts
         )
 
-    def process_shift(self, events, shift_name):
+    def process_shift(self, events, sumws, shift_name):
         isRealData = not hasattr(events, "genWeight")
         dataset = events.metadata["dataset"]
-        output = {} if self.noHist else histogrammer(events, "QCD")
+        output = {}
+        if not self.noHist:
+            output = histogrammer(
+                events.Jet.fields,
+                obj_list=["jet0"],
+                hist_collections=["common", "fourvec", "QCD"],
+            )
 
-        if isRealData:
-            output["sumw"] = len(events)
-        else:
-            output["sumw"] = ak.sum(events.genWeight)
+        if shift_name is None:
+            output["sumw"] = sumws["sumw"]
+            if not isRealData and self.isSyst:
+                if "LHEPdfWeight" in events.fields:
+                    output["PDF_sumwUp"] = sumws["PDF_sumwUp"]
+                    output["PDF_sumwDown"] = sumws["PDF_sumwDown"]
+                    output["aS_sumwUp"] = sumws["aS_sumwUp"]
+                    output["aS_sumwDown"] = sumws["aS_sumwDown"]
+                    output["PDFaS_sumwUp"] = sumws["PDFaS_sumwUp"]
+                    output["PDFaS_sumwDown"] = sumws["PDFaS_sumwDown"]
+                if "LHEScaleWeight" in events.fields:
+                    output["muR_sumwUp"] = sumws["muR_sumwUp"]
+                    output["muR_sumwDown"] = sumws["muR_sumwDown"]
+                    output["muF_sumwUp"] = sumws["muF_sumwUp"]
+                    output["muF_sumwDown"] = sumws["muF_sumwDown"]
+                if "PSWeight" in events.fields:
+                    if len(events.PSWeight[0]) == 4:
+                        output["ISR_sumwUp"] = sumws["ISR_sumwUp"]
+                        output["ISR_sumwDown"] = sumws["ISR_sumwDown"]
+                        output["FSR_sumwUp"] = sumws["FSR_sumwUp"]
+                        output["FSR_sumwDown"] = sumws["FSR_sumwDown"]
 
         ####################
         #    Selections    #
@@ -196,12 +225,24 @@ class NanoProcessor(processor.ProcessorABC):
         #     Output       #
         ####################
         # Configure SFs
-        weights = weight_manager(pruned_ev, self.SF_map, self.isSyst)
+        weights = weight_manager(
+            pruned_ev,
+            self.SF_map,
+            self.isSyst,
+            ttbar_reweights=getattr(self, "ttbar_reweights", "none"),
+            campaign=self._campaign,
+        )
         if isRealData:
             if self._year == "2022":
                 run_num = "355374_362760"
             elif self._year == "2023":
                 run_num = "366727_370790"
+            elif self._year == "2024":
+                run_num = "378985_386951"
+            else:
+                raise ValueError(
+                    f"Prescales for year {self._year} have not been defined!"
+                )
 
             # if 369869 in pruned_ev.run: continue
             psweight = np.zeros(len(pruned_ev))
@@ -209,7 +250,7 @@ class NanoProcessor(processor.ProcessorABC):
                 psfile = f"src/BTVNanoCommissioning/data/Prescales/ps_weight_{trigger}_run{run_num}.json"
                 if not os.path.isfile(psfile):
                     raise NotImplementedError(
-                        f"Prescale weights not available for {trigger} in {self._year}. Please run `scripts/dump_prescale.py`."
+                        f"Prescale weights not available for {trigger} in {self._year}. Please run `scripts/dump_prescale.py -l <path-to-lumi-mask> -H {','.join(triggers.keys())}`."
                     )
                 pseval = correctionlib.CorrectionSet.from_file(psfile)
                 thispsweight = pseval["prescaleWeight"].evaluate(
@@ -253,6 +294,7 @@ class NanoProcessor(processor.ProcessorABC):
                 dataset,
                 isRealData,
                 kinOnly=[],
+                doOnly=["SelJet", "njet", "PuppiMET"],
             )
 
         return {dataset: output}

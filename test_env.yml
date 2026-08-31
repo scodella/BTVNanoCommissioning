@@ -1,6 +1,6 @@
-name: btv_coffea
 channels:
   - conda-forge
+  - nodefaults
 
 dependencies:
   - python[version='<=3.10']
@@ -9,7 +9,6 @@ dependencies:
   - ca-certificates
   - xrootd
   - openssl
-  - coffea==0.7.22
   - vector
   - fsspec[version='>=0.3.3']
   - psutil
@@ -18,3 +17,8 @@ dependencies:
   - parsl==2024.01.29
   - arrow
   - dask-jobqueue
+  - alive-progress
+  - pip:
+    - coffea==0.7.31
+    - correctionlib==2.7.0
+    - onnxruntime

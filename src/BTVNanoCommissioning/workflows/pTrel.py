@@ -26,8 +26,7 @@ from BTVNanoCommissioning.helpers.func import (
 from BTVNanoCommissioning.helpers.update_branch import missing_branch
 
 ## load histograms & selctions for this workflow
-from BTVNanoCommissioning.utils.histogrammer import histogrammer, histo_writter
-from BTVNanoCommissioning.utils.array_writer import array_writer
+from BTVNanoCommissioning.utils.histogramming.histogrammer import histogrammer, histo_writter
 from BTVNanoCommissioning.utils.selection import (
     HLT_helper,
     jet_id,
@@ -252,7 +251,7 @@ class NanoProcessor(processor.ProcessorABC):
         _hist_event_dict = (
             {"": None}
             if self.noHist
-            else histogrammer(events, self.tag, self._year, self._campaign)
+            else histogrammer(hist_collections=["pTrel"], axes_collections=["common","pTrel"], workflow=self.tag, year=self._year, campaign=self._campaign)
         )
 
         output = {

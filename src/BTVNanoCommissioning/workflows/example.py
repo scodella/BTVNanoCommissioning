@@ -10,6 +10,7 @@ from BTVNanoCommissioning.utils.correction import (
     load_SF,
     common_shifts,
     weight_manager,
+    reweighting,
 )
 
 # user helper function
@@ -22,7 +23,10 @@ from BTVNanoCommissioning.helpers.func import (
 from BTVNanoCommissioning.helpers.update_branch import missing_branch
 
 ## load histograms & selctions for this workflow
-from BTVNanoCommissioning.utils.histogrammer import histogrammer, histo_writter
+from BTVNanoCommissioning.utils.histogramming.histogrammer import (
+    histogrammer,
+    histo_writer,
+)
 from BTVNanoCommissioning.utils.array_writer import array_writer
 from BTVNanoCommissioning.utils.selection import (
     HLT_helper,
@@ -61,28 +65,51 @@ class NanoProcessor(processor.ProcessorABC):
     ## Apply corrections on momentum/mass on MET, Jet, Muon
     def process(self, events):
         events = missing_branch(events)
+        sumws = reweighting(events, self.isSyst)
         vetoed_events, shifts = common_shifts(self, events)
 
         return processor.accumulate(
-            self.process_shift(update(vetoed_events, collections), name)
+            self.process_shift(update(vetoed_events, collections), sumws, name)
             for collections, name in shifts
         )
 
     ## Processed events per-chunk, made selections, filled histogram, stored root files
-    def process_shift(self, events, shift_name):
+    def process_shift(self, events, sumws, shift_name):
         dataset = events.metadata["dataset"]
         isRealData = not hasattr(events, "genWeight")
         ######################
         #  Create histogram  # : Get the histogram dict from `histogrammer`
         ######################
         # this is the place to modify
-        output = {} if self.noHist else histogrammer(events, "example")
+        output = {}
+        if not self.noHist:
+            output = histogrammer(
+                jet_fields=events.Jet.fields,
+                obj_list=["jet", "mu"],
+                hist_collections=["example", "common", "fourvec"],
+            )
 
         if shift_name is None:
-            if isRealData:
-                output["sumw"] = len(events)
-            else:
-                output["sumw"] = ak.sum(events.genWeight)
+            output["sumw"] = sumws["sumw"]
+            if not isRealData and self.isSyst:
+                if "LHEPdfWeight" in events.fields:
+                    output["PDF_sumwUp"] = sumws["PDF_sumwUp"]
+                    output["PDF_sumwDown"] = sumws["PDF_sumwDown"]
+                    output["aS_sumwUp"] = sumws["aS_sumwUp"]
+                    output["aS_sumwDown"] = sumws["aS_sumwDown"]
+                    output["PDFaS_sumwUp"] = sumws["PDFaS_sumwUp"]
+                    output["PDFaS_sumwDown"] = sumws["PDFaS_sumwDown"]
+                if "LHEScaleWeight" in events.fields:
+                    output["muR_sumwUp"] = sumws["muR_sumwUp"]
+                    output["muR_sumwDown"] = sumws["muR_sumwDown"]
+                    output["muF_sumwUp"] = sumws["muF_sumwUp"]
+                    output["muF_sumwDown"] = sumws["muF_sumwDown"]
+                if "PSWeight" in events.fields:
+                    if len(events.PSWeight[0]) == 4:
+                        output["ISR_sumwUp"] = sumws["ISR_sumwUp"]
+                        output["ISR_sumwDown"] = sumws["ISR_sumwDown"]
+                        output["FSR_sumwUp"] = sumws["FSR_sumwUp"]
+                        output["FSR_sumwDown"] = sumws["FSR_sumwDown"]
 
         ####################
         #    Selections    #
@@ -153,6 +180,7 @@ class NanoProcessor(processor.ProcessorABC):
         ####################
         # Keep the structure of events and pruned the object size
         pruned_ev = events[event_level]
+        pruned_ev["njet"] = ak.count(event_jet[event_level].pt, axis=1)
         pruned_ev["SelJet"] = event_jet[event_level][:, 0]
         pruned_ev["SelMuon"] = event_mu[event_level][:, 0]
         pruned_ev["SelElectron"] = event_e[event_level][:, 0]
@@ -164,7 +192,13 @@ class NanoProcessor(processor.ProcessorABC):
         #     Output       #
         ####################
         # Configure SFs - read pruned objects from the pruned_ev and apply SFs and call the systematics
-        weights = weight_manager(pruned_ev, self.SF_map, self.isSyst)
+        weights = weight_manager(
+            pruned_ev,
+            self.SF_map,
+            self.isSyst,
+            ttbar_reweights=getattr(self, "ttbar_reweights", "none"),
+            campaign=self._campaign,
+        )
         # Configure systematics shifts
         if shift_name is None:
             systematics = ["nominal"] + list(
@@ -177,7 +211,7 @@ class NanoProcessor(processor.ProcessorABC):
 
         # Configure histograms- fill the histograms with pruned objects
         if not self.noHist:
-            output = histo_writter(
+            output = histo_writer(
                 pruned_ev, output, weights, systematics, self.isSyst, self.SF_map
             )
         # Output arrays - store the pruned objects in the output arrays

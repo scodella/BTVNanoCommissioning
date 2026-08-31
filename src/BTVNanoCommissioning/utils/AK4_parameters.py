@@ -1,188 +1,373 @@
 correction_config = {
     "Rereco17_94X": {
-        "lumiMask": "Cert_314472-325175_13TeV_17SeptEarlyReReco2018ABC_PromptEraD_Collisions18_JSON.txt",
-        "PU": "94XPUwei_corrections.pkl.gz",
-        "JME": "jec_compiled.pkl.gz",
-        "BTV": {
-            "DeepCSVB": "DeepCSV_94XSF_V5_B_F.csv",
-            "DeepCSVC": "DeepCSV_ctagSF_MiniAOD94X_2017_pTincl_v3_2_interp.root",
-            "DeepJetB": "DeepFlavour_94XSF_V4_B_F.csv",
-            "DeepJetC": "DeepJet_ctagSF_MiniAOD94X_2017_pTincl_v3_2_interp.root",
-        },
-        "LSF": {
-            "ele_Trig TrigSF": "Ele32_L1DoubleEG_TrigSF_vhcc.histo.root",
-            "ele_ID EGamma_SF2D": "ElectronIDSF_94X_MVA80WP.histo.root",
-            "ele_Rereco EGamma_SF2D": "ElectronRecoSF_94X.histo.root",
-            "mu_ID NUM_TightID_DEN_genTracks_pt_abseta": "RunBCDEF_MuIDSF.histo.root",
-            "mu_ID_low NUM_TightID_DEN_genTracks_pt_abseta": "RunBCDEF_MuIDSF_lowpT.histo.root",
-            "mu_Iso NUM_TightRelIso_DEN_TightIDandIPCut_pt_abseta": "RunBCDEF_MuISOSF.histo.root",
+        "default": {
+            "DC": "Cert_314472-325175_13TeV_17SeptEarlyReReco2018ABC_PromptEraD_Collisions18_JSON.txt",
+            "LUM": "94XPUwei_corrections.pkl.gz",
+            "JME": "jec_compiled.pkl.gz",
+            "BTV": {
+                "DeepCSVB": "DeepCSV_94XSF_V5_B_F.csv",
+                "DeepCSVC": "DeepCSV_ctagSF_MiniAOD94X_2017_pTincl_v3_2_interp.root",
+                "DeepJetB": "DeepFlavour_94XSF_V4_B_F.csv",
+                "DeepJetC": "DeepJet_ctagSF_MiniAOD94X_2017_pTincl_v3_2_interp.root",
+            },
+            "EGM": {
+                "ele_Trig TrigSF": "Ele32_L1DoubleEG_TrigSF_vhcc.histo.root",
+                "ele_ID EGamma_SF2D": "ElectronIDSF_94X_MVA80WP.histo.root",
+                "ele_Rereco EGamma_SF2D": "ElectronRecoSF_94X.histo.root",
+            },
+            "MUO": {
+                "mu_ID NUM_TightID_DEN_genTracks_pt_abseta": "RunBCDEF_MuIDSF.histo.root",
+                "mu_ID_low NUM_TightID_DEN_genTracks_pt_abseta": "RunBCDEF_MuIDSF_lowpT.histo.root",
+                "mu_Iso NUM_TightRelIso_DEN_TightIDandIPCut_pt_abseta": "RunBCDEF_MuISOSF.histo.root",
+            },
         },
     },
-    "2017_UL": {
-        "lumiMask": "Cert_294927-306462_13TeV_UL2017_Collisions17_MuonJSON.txt",
-        "PU": None,
-        "JME": "jec_compiled.pkl.gz",
-        "BTV": {"deepCSV": "shape", "deepJet": "shape"},
-        "LSF": {
-            "ele_ID 2017 UL-Electron-ID-SF": "wp90iso",
-            "ele_Reco 2017 UL-Electron-ID-SF": "RecoAbove20",
-            "mu_Reco 2017_UL": "NUM_TrackerMuons_DEN_genTracks",
-            "mu_HLT 2017_UL": "NUM_IsoMu27_DEN_CutBasedIdTight_and_PFIsoTight",
-            "mu_ID 2017_UL": "NUM_TightID_DEN_TrackerMuons",
-            "mu_Iso 2017_UL": "NUM_TightRelIso_DEN_TightIDandIPCut",
-            "mu_ID_low *": "Efficiency_muon_trackerMuon_Run2017_UL_ID.histo.json",
-            "mu_Reco_low *": "Efficiency_muon_generalTracks_Run2017_UL_trackerMuon.histo.json",
+    "2016preVFP-UL": {
+        "default": {
+            "DC": "Cert_271036-284044_13TeV_Legacy2016_Collisions16_JSON.txt",
+            "LUM": None,
+            "JME": {
+                "MC": "Summer20UL16APVNanoV15_V1 Summer20UL16APV_JRV5",
+                "Run2016B": "Summer20UL16APVNanoV15_V1",
+                "Run2016C": "Summer20UL16APVNanoV15_V1",
+                "Run2016D": "Summer20UL16APVNanoV15_V1",
+                "Run2016E": "Summer20UL16APVNanoV15_V1",
+                "Run2016F": "Summer20UL16APVNanoV15_V1",
+            },
+            "jetveto": {"Summer19UL16_V1": "jetvetomap"},
+            "JME_path": "/cvmfs/cms-griddata.cern.ch/cat/metadata/JME/Run2-2016preVFP-UL-NanoAODv15/latest/jet_jerc.json.gz",
+            "MUO": {
+                "mu_ID": "NUM_TightID_DEN_TrackerMuons",
+                "mu_Iso": "NUM_TightRelIso_DEN_TightIDandIPCut",
+            },
+            "EGM": {
+                "ele_Reco 2016 Electron-ID-SF": "",
+                "ele_ID 2016 Electron-ID-SF": "wp80iso",
+            },
+            "muonSS": "",
+            "electronSS": [
+                "Scale",
+                "SmearAndSyst",
+            ],
+            "roccor": "",
+            "cvmfs_override": {
+                "MUO": "Run2-2016preVFP-UL-NanoAODv9",  # Nanov15 unavailable
+                "muonSS": "Run2-2016preVFP-UL-NanoAODv9",  # Nanov15 unavailable
+                "EGM": "Run2-2016preVFP-UL-NanoAODv15",
+                "electronSS": "Run2-2016preVFP-UL-NanoAODv15",
+                "jetveto": "Run2-2016preVFP-UL-NanoAODv15",
+                "JME": "Run2-2016preVFP-UL-NanoAODv15",
+            },
+        },
+        "tt_semilep_mu": {
+            "MUO": {
+                "mu_ID": "NUM_TightID_DEN_TrackerMuons",
+                "mu_Iso": "NUM_TightRelIso_DEN_TightIDandIPCut",
+                "mu_Trig": "NUM_IsoMu24_or_IsoTkMu24_DEN_CutBasedIdTight_and_PFIsoTight",  # in the future this should be something like NUM_IsoMu24_DEN_CutBasedIdTight_and_promptMVA_WP64ID
+            },
+        },
+        "tt_semilep_el": {
+            "EGM": {
+                "ele_Reco 2016preVFP UL-Electron-ID-SF": "",
+                "ele_ID 2016preVFP UL-Electron-ID-SF": "wp80iso",
+            },
+        },
+    },
+    "2016postVFP-UL": {
+        "default": {
+            "DC": "Cert_271036-284044_13TeV_Legacy2016_Collisions16_JSON.txt",
+            "LUM": None,
+            "JME": {
+                "MC": "Summer20UL16NanoV15_V1 Summer20UL16_JRV5",
+                "Run2016F": "Summer20UL16NanoV15_V1",
+                "Run2016G": "Summer20UL16NanoV15_V1",
+                "Run2016H": "Summer20UL16NanoV15_V1",
+            },
+            "jetveto": {"Summer19UL16_V1": "jetvetomap"},
+            "JME_path": "/cvmfs/cms-griddata.cern.ch/cat/metadata/JME/Run2-2016postVFP-UL-NanoAODv15/latest/jet_jerc.json.gz",
+            "MUO": {
+                "mu_ID": "NUM_TightID_DEN_TrackerMuons",
+                "mu_Iso": "NUM_TightRelIso_DEN_TightIDandIPCut",
+            },
+            "EGM": {
+                "ele_Reco 2016 Electron-ID-SF": "",
+                "ele_ID 2016 Electron-ID-SF": "wp80iso",
+            },
+            "muonSS": "",
+            "electronSS": [
+                "Scale",
+                "SmearAndSyst",
+            ],
+            "roccor": "",
+            "cvmfs_override": {
+                "MUO": "Run2-2016postVFP-UL-NanoAODv9",  # Nanov15 unavailable
+                "muonSS": "Run2-2016postVFP-UL-NanoAODv9",  # Nanov15 unavailable
+                "EGM": "Run2-2016postVFP-UL-NanoAODv15",
+                "electronSS": "Run2-2016postVFP-UL-NanoAODv15",
+                "jetveto": "Run2-2016postVFP-UL-NanoAODv15",
+                "JME": "Run2-2016postVFP-UL-NanoAODv15",
+            },
+        },
+        "tt_semilep_mu": {
+            "MUO": {
+                "mu_ID": "NUM_TightID_DEN_TrackerMuons",
+                "mu_Iso": "NUM_TightRelIso_DEN_TightIDandIPCut",
+                "mu_Trig": "NUM_IsoMu24_or_IsoTkMu24_DEN_CutBasedIdTight_and_PFIsoTight",  # in the future this should be something like NUM_IsoMu24_DEN_CutBasedIdTight_and_promptMVA_WP64ID
+            },
+        },
+        "tt_semilep_el": {
+            "EGM": {
+                "ele_Reco 2016postVFP UL-Electron-ID-SF": "",
+                "ele_ID 2016postVFP UL-Electron-ID-SF": "wp80iso",
+            },
+        },
+    },
+    "2017-UL": {
+        "default": {
+            "DC": "Cert_294927-306462_13TeV_UL2017_Collisions17_MuonJSON.txt",
+            "LUM": None,
+            "JME": {
+                "MC": "Summer20UL17NanoV15_V1 Summer19UL17_JRV4",
+                "Run2017B": "Summer20UL17NanoV15_V1",
+                "Run2017C": "Summer20UL17NanoV15_V1",
+                "Run2017D": "Summer20UL17NanoV15_V1",
+                "Run2017E": "Summer20UL17NanoV15_V1",
+                "Run2017F": "Summer20UL17NanoV15_V1",
+            },
+            "jetveto": {"Summer19UL17_V1": "jetvetomap"},
+            "JME_path": "/cvmfs/cms-griddata.cern.ch/cat/metadata/JME/Run2-2017-UL-NanoAODv15/latest/jet_jerc.json.gz",
+            "MUO": {
+                "mu_ID": "NUM_TightID_DEN_TrackerMuons",
+                "mu_Iso": "NUM_TightRelIso_DEN_TightIDandIPCut",
+            },
+            "EGM": {
+                "ele_Reco 2017 Electron-ID-SF": "",
+                "ele_ID 2017 Electron-ID-SF": "wp80iso",
+            },
+            "muonSS": "",
+            "electronSS": [
+                "Scale",
+                "SmearAndSyst",
+            ],
+            "roccor": "",
+            "cvmfs_override": {
+                "MUO": "Run2-2017-UL-NanoAODv9",  # Nanov15 unavailable
+                "muonSS": "Run2-2017-UL-NanoAODv9",  # Nanov15 unavailable
+                "EGM": "Run2-2017-UL-NanoAODv15",
+                "electronSS": "Run2-2017-UL-NanoAODv15",
+                "jetveto": "Run2-2017-UL-NanoAODv15",
+            },
+        },
+        "tt_semilep_mu": {
+            "MUO": {
+                "mu_ID": "NUM_TightID_DEN_TrackerMuons",
+                "mu_Iso": "NUM_TightRelIso_DEN_TightIDandIPCut",
+                "mu_Trig": "NUM_IsoMu27_DEN_CutBasedIdTight_and_PFIsoTight",  # in the future this should be something like NUM_IsoMu24_DEN_CutBasedIdTight_and_promptMVA_WP64ID
+            },
+        },
+        "tt_semilep_el": {
+            "EGM": {
+                "ele_Reco 2017 UL-Electron-ID-SF": "",
+                "ele_ID 2017 UL-Electron-ID-SF": "wp80iso",
+            },
+        },
+    },
+    "2018-UL": {
+        "default": {
+            "DC": "Cert_314472-325175_13TeV_Legacy2018_Collisions18_JSON.txt",
+            "LUM": "puweight_2018_UL.HLTPFJet40.histo",
+            "JME": {
+                "MC": "Summer20UL18NanoV15_V1 Summer19UL18_JRV3",
+                "Run2018A": "Summer20UL18NanoV15_V1",
+                "Run2018B": "Summer20UL18NanoV15_V1",
+                "Run2018C": "Summer20UL18NanoV15_V1",
+                "Run2018D": "Summer20UL18NanoV15_V1",
+            },
+            "jetveto": {"Summer19UL18_V1": "jetvetomap"},
+            "JME_path": "/cvmfs/cms-griddata.cern.ch/cat/metadata/JME/Run2-2018-UL-NanoAODv15/latest/jet_jerc.json.gz",
+            "MUO": {
+                "mu_ID": "NUM_TightID_DEN_TrackerMuons",
+                "mu_Iso": "NUM_TightRelIso_DEN_TightIDandIPCut",
+            },
+            "EGM": {
+                "ele_Reco 2018 Electron-ID-SF": "",
+                "ele_ID 2018 Electron-ID-SF": "wp80iso",
+            },
+            "muonSS": "",
+            "electronSS": [
+                "Scale",
+                "SmearAndSyst",
+            ],
+            "roccor": "",
+            "cvmfs_override": {
+                "MUO": "Run2-2018-UL-NanoAODv9",  # Nanov15 unavailable
+                "muonSS": "Run2-2018-UL-NanoAODv9",  # Nanov15 unavailable
+                "EGM": "Run2-2018-UL-NanoAODv15",
+                "electronSS": "Run2-2018-UL-NanoAODv15",
+                "jetveto": "Run2-2018-UL-NanoAODv15",
+            },
+        },
+        "tt_semilep_mu": {
+            "MUO": {
+                "mu_ID": "NUM_TightID_DEN_TrackerMuons",
+                "mu_Iso": "NUM_TightRelIso_DEN_TightIDandIPCut",
+                "mu_Trig": "NUM_IsoMu24_DEN_CutBasedIdTight_and_PFIsoTight",  # in the future this should be something like NUM_IsoMu24_DEN_CutBasedIdTight_and_promptMVA_WP64ID
+            },
+        },
+        "tt_semilep_el": {
+            "EGM": {
+                "ele_Reco 2018 UL-Electron-ID-SF": "",
+                "ele_ID 2018 UL-Electron-ID-SF": "wp80iso",
+            },
         },
     },
     "Winter22Run3": {
-        "lumiMask": "Cert_Collisions2022_355100_357900_Golden.json",
-        "PU": "puweight_Winter22Run3.histo.root",
-        "JME": "jec_compiled.pkl.gz",
-        "jetveto": {"Run2022CD jetvetomap": "Winter22Run3_RunCD_v1.histo.root"},
+        "default": {
+            "DC": "Cert_Collisions2022_355100_357900_Golden.json",
+            "LUM": "puweight_Winter22Run3.histo.root",
+            "JME": "jec_compiled.pkl.gz",
+            "jetveto": {"Run2022CD jetvetomap": "Winter22Run3_RunCD_v1.histo.root"},
+        },
     },
     "Summer22": {
-        "lumiMask": "Cert_Collisions2022_355100_362760_Golden.json",
-        "PU": "puwei_2022_preEE.histo.root",  # new PU files, based on preEE
-        "JME": {
-            "MC": "Summer22_22Sep2023_V2 Summer22_22Sep2023_JRV1",
-            "Run2022C": "Summer22_22Sep2023_RunCD_V2",
-            "Run2022D": "Summer22_22Sep2023_RunCD_V2",
-        },  # update to latest JEC
-        "LSF": {
-            "mu_ID": "NUM_TightID_DEN_TrackerMuons",
-            "mu_Iso": "NUM_TightPFIso_DEN_TightID",
-            "ele_ID 2022Re-recoBCD Electron-ID-SF": "Tight",
-            "ele_Reco 2022Re-recoBCD Electron-ID-SF": "",
+        "default": {
+            "DC": "Cert_Collisions2022_355100_362760_Golden.json",
+            "LUM": "puwei_2022_preEE.histo.root",  # new PU files, based on preEE
+            "JME": {
+                "MC": "Summer22_22Sep2023_V4 Summer22_22Sep2023_JRV2",
+                "Run2022C": "Summer22_22Sep2023_V4",
+                "Run2022D": "Summer22_22Sep2023_V4",
+            },  # update to latest JEC
+            "MUO": {
+                "mu_ID": "NUM_TightID_DEN_TrackerMuons",
+                "mu_Iso": "NUM_TightPFIso_DEN_TightID",
+            },
+            "EGM": {
+                "ele_ID 2022Re-recoBCD Electron-ID-SF": "Tight",
+                "ele_Reco 2022Re-recoBCD Electron-ID-SF": "",
+            },
+            "JPCalib": {
+                "Run2022C": "calibeHistoWrite_Data2022C_NANO130X_v1.root",
+                "Run2022D": "calibeHistoWrite_Data2022D_NANO130X_v1.root",
+                "MC": "calibeHistoWrite_MC2022_NANO130X_v2.root",
+            },
+            "jetveto": {"Summer22_23Sep2023_RunCD_V1": "jetvetomap"},
+            "muonSS": "",
+            "electronSS": [
+                "Scale",
+                "SmearAndSyst",
+            ],
         },
-        "JPCalib": {
-            "Run2022C": "calibeHistoWrite_Data2022C_NANO130X_v1.root",
-            "Run2022D": "calibeHistoWrite_Data2022D_NANO130X_v1.root",
-            "MC": "calibeHistoWrite_MC2022_NANO130X_v2.root",
-        },
-        "jetveto": {"Summer22_23Sep2023_RunCD_V1": "jetvetomap"},
-        "muonSS": "",
-        "electronSS": [
-            "EGMScale_Compound_Ele_2022preEE",
-            "EGMSmearAndSyst_ElePTsplit_2022preEE",
-        ],
     },
     "Summer22EE": {
-        "lumiMask": "Cert_Collisions2022_355100_362760_Golden.json",
-        "PU": "puwei_2022_postEE.histo.root",  # new PU file, post EE
-        "JME": {
-            "MC": "Summer22EE_22Sep2023_V2 Summer22EE_22Sep2023_JRV1",
-            "Run2022E": "Summer22EE_22Sep2023_RunE_V2",
-            "Run2022F": "Summer22EE_22Sep2023_RunF_V2",
-            "Run2022G": "Summer22EE_22Sep2023_RunG_V2",
+        "default": {
+            "DC": "Cert_Collisions2022_355100_362760_Golden.json",
+            "LUM": "puwei_2022_postEE.histo.root",  # new PU file, post EE
+            "JME": {
+                "MC": "Summer22EE_22Sep2023_V4 Summer22EE_22Sep2023_JRV2",
+                "Run2022E": "Summer22EE_22Sep2023_V4",
+                "Run2022F": "Summer22EE_22Sep2023_V4",
+                "Run2022G": "Summer22EE_22Sep2023_V4",
+            },
+            "JES_MC_year": "2022EE",
+            "MUO": {
+                "mu_ID": "NUM_TightID_DEN_TrackerMuons",
+                "mu_Iso": "NUM_TightPFIso_DEN_TightID",
+            },
+            "EGM": {
+                "ele_ID 2022Re-recoE+PromptFG Electron-ID-SF": "Tight",
+                "ele_Reco 2022Re-recoE+PromptFG Electron-ID-SF": "",
+            },
+            "jetveto": {"Summer22EE_23Sep2023_RunEFG_V1": "jetvetomap"},
+            # use for BTA production, jet probablity
+            "JPCalib": {
+                "Run2022E": "calibeHistoWrite_Data2022F_NANO130X_v1.root",
+                "Run2022F": "calibeHistoWrite_Data2022F_NANO130X_v1.root",
+                "Run2022G": "calibeHistoWrite_Data2022G_NANO130X_v1.root",
+                "MC": "calibeHistoWrite_MC2022EE_NANO130X_v1.root",
+            },
+            "muonSS": "",
+            "electronSS": [
+                "Scale",
+                "SmearAndSyst",
+            ],
         },
-        "LSF": {
-            "mu_ID": "NUM_TightID_DEN_TrackerMuons",
-            "mu_Iso": "NUM_TightPFIso_DEN_TightID",
-            "ele_ID 2022Re-recoE+PromptFG Electron-ID-SF": "Tight",
-            "ele_Reco 2022Re-recoE+PromptFG Electron-ID-SF": "",
-        },
-        "jetveto": {"Summer22EE_23Sep2023_RunEFG_V1": "jetvetomap"},
-        # use for BTA production, jet probablity
-        "JPCalib": {
-            "Run2022E": "calibeHistoWrite_Data2022F_NANO130X_v1.root",
-            "Run2022F": "calibeHistoWrite_Data2022F_NANO130X_v1.root",
-            "Run2022G": "calibeHistoWrite_Data2022G_NANO130X_v1.root",
-            "MC": "calibeHistoWrite_MC2022EE_NANO130X_v1.root",
-        },
-        "muonSS": "",
-        "electronSS": [
-            "EGMScale_Compound_Ele_2022postEE",
-            "EGMSmearAndSyst_ElePTsplit_2022postEE",
-        ],
     },
     "Summer23": {
-        "lumiMask": "Cert_Collisions2023_366442_370790_Golden.json",
-        "PU": "puwei_Summer23.histo.root",
-        "JME": {
-            "name": "V1_AK4PFPuppi",
-            "MC": [
-                "Summer23Prompt23_V1_MC_L1FastJet_AK4PFPuppi",
-                "Summer23Prompt23_V1_MC_L2Relative_AK4PFPuppi",
-                "Summer23Prompt23_V1_MC_L2Residual_AK4PFPuppi",
-                "Summer23Prompt23_V1_MC_L3Absolute_AK4PFPuppi",
-                "Summer23Prompt23_V1_MC_UncertaintySources_AK4PFPuppi",
-                "Summer23Prompt23_V1_MC_Uncertainty_AK4PFPuppi",
-                "Summer23Prompt23_JRV1_MC_SF_AK4PFPuppi",
-                "Summer23Prompt23_JRV1_MC_PtResolution_AK4PFPuppi",
-            ],
-            "dataCv123": [
-                "Summer23Prompt23_RunCv123_V1_DATA_L1FastJet_AK4PFPuppi",
-                "Summer23Prompt23_RunCv123_V1_DATA_L2Relative_AK4PFPuppi",
-                "Summer23Prompt23_RunCv123_V1_DATA_L3Absolute_AK4PFPuppi",
-                "Summer23Prompt23_RunCv123_V1_DATA_L2L3Residual_AK4PFPuppi",
-            ],
-            "dataCv4": [
-                "Summer23Prompt23_RunCv4_V1_DATA_L1FastJet_AK4PFPuppi",
-                "Summer23Prompt23_RunCv4_V1_DATA_L2Relative_AK4PFPuppi",
-                "Summer23Prompt23_RunCv4_V1_DATA_L3Absolute_AK4PFPuppi",
-                "Summer23Prompt23_RunCv4_V1_DATA_L2L3Residual_AK4PFPuppi",
+        "default": {
+            "DC": "Cert_Collisions2023_366442_370790_Golden.json",
+            "LUM": "puwei_Summer23.histo.root",
+            "JME": {
+                "MC": "Summer23Prompt23_V4 Summer23Prompt23_RunCv1234_JRV3",
+                "Run2023C": "Summer23Prompt23_V4",
+            },
+            "jetveto": {"Summer23Prompt23_RunC_V1": "jetvetomap"},
+            "JPCalib": {
+                "Run2023C-22Sep2023_v1": "calibeHistoWrite_Data2023C-22Sep2023_v1.root",
+                "Run2023C-22Sep2023_v2": "calibeHistoWrite_Data2023C-22Sep2023_v2.root",
+                "Run2023C-22Sep2023_v3": "calibeHistoWrite_Data2023C-22Sep2023_v3.root",
+                "Run2023C-22Sep2023_v4": "calibeHistoWrite_Data2023C-22Sep2023_v4.root",
+                "MC": "calibeHistoWrite_MC2023_Summer23.root",
+            },
+            "MUO": {
+                "mu_ID": "NUM_TightID_DEN_TrackerMuons",
+                "mu_Iso": "NUM_TightPFIso_DEN_TightID",
+            },
+            "EGM": {
+                "ele_ID 2023PromptC Electron-ID-SF": "Tight",
+                "ele_Reco 2023PromptC Electron-ID-SF": "",
+            },
+            "muonSS": "",
+            "electronSS": [
+                "Scale",
+                "SmearAndSyst",
             ],
         },
-        "jetveto": {"Summer23Prompt23_RunC_V1": "jetvetomap"},
-        "JPCalib": {
-            "Run2023C-22Sep2023_v1": "calibeHistoWrite_Data2023C-22Sep2023_v1.root",
-            "Run2023C-22Sep2023_v2": "calibeHistoWrite_Data2023C-22Sep2023_v2.root",
-            "Run2023C-22Sep2023_v3": "calibeHistoWrite_Data2023C-22Sep2023_v3.root",
-            "Run2023C-22Sep2023_v4": "calibeHistoWrite_Data2023C-22Sep2023_v4.root",
-            "MC": "calibeHistoWrite_MC2023_Summer23.root",
-        },
-        "LSF": {
-            "mu_ID": "NUM_TightID_DEN_TrackerMuons",
-            "mu_Iso": "NUM_TightPFIso_DEN_TightID",
-            "ele_ID 2023PromptC Electron-ID-SF": "Tight",
-            "ele_Reco 2023PromptC Electron-ID-SF": "",
-        },
-        "muonSS": "",
-        "electronSS": [
-            "EGMScale_Compound_Ele_2023preBPIX",
-            "EGMSmearAndSyst_ElePTsplit_2023preBPIX",
-        ],
     },
     "Summer23BPix": {
-        "lumiMask": "Cert_Collisions2023_366442_370790_Golden.json",
-        "PU": "puwei_Summer23BPix.histo.root",
-        "JME": {
-            "MC": "Summer23BPixPrompt23_V1 Summer23BPixPrompt23_RunD_JRV1",
-            "Run2023D": "Summer23BPixPrompt23_RunD_V1",
+        "default": {
+            "DC": "Cert_Collisions2023_366442_370790_Golden.json",
+            "LUM": "puwei_Summer23BPix.histo.root",
+            "JME": {
+                "MC": "Summer23BPixPrompt23_V4 Summer23BPixPrompt23_RunD_JRV3",
+                "Run2023D": "Summer23BPixPrompt23_V4",
+            },
+            "JES_MC_year": "2023BPix",
+            "MUO": {
+                "mu_ID": "NUM_TightID_DEN_TrackerMuons",
+                "mu_Iso": "NUM_TightPFIso_DEN_TightID",
+            },
+            "EGM": {
+                "ele_ID 2023PromptD Electron-ID-SF": "Tight",
+                "ele_Reco 2023PromptD Electron-ID-SF": "",
+            },
+            # This is from Mikko https://indico.cern.ch/event/1315421/contributions/5532963/attachments/2697975/4683826/2023_08_16_jetvetomaps_v3.pdf
+            "jetveto": {"Summer23BPixPrompt23_RunD_V1": "jetvetomap"},
+            "JPCalib": {
+                "Run2023D-22Sep2023_v1": "calibeHistoWrite_Data2023D-22Sep2023_v1.root",
+                "Run2023D-22Sep2023_v2": "calibeHistoWrite_Data2023D-22Sep2023_v2.root",
+                "MC": "calibeHistoWrite_MC2023_Summer23BPix.root",
+            },
+            "muonSS": "",
+            "electronSS": [
+                "Scale",
+                "SmearAndSyst",
+            ],
         },
-        # "JME": "jec_compiled.pkl.gz",
-        "LSF": {
-            "mu_ID": "NUM_TightID_DEN_TrackerMuons",
-            "mu_Iso": "NUM_TightPFIso_DEN_TightID",
-            "ele_ID 2023PromptD Electron-ID-SF": "Tight",
-            "ele_Reco 2023PromptD Electron-ID-SF": "",
-        },
-        # This is from Mikko https://indico.cern.ch/event/1315421/contributions/5532963/attachments/2697975/4683826/2023_08_16_jetvetomaps_v3.pdf
-        "jetveto": {"Summer23BPixPrompt23_RunD_V1": "jetvetomap"},
-        "JPCalib": {
-            "Run2023D-22Sep2023_v1": "calibeHistoWrite_Data2023D-22Sep2023_v1.root",
-            "Run2023D-22Sep2023_v2": "calibeHistoWrite_Data2023D-22Sep2023_v2.root",
-            "MC": "calibeHistoWrite_MC2023_Summer23BPix.root",
-        },
-        "muonSS": "",
-        "electronSS": [
-            "EGMScale_Compound_Ele_2023postBPIX",
-            "EGMSmearAndSyst_ElePTsplit_2023postBPIX",
-        ],
     },
     "Summer24": {
         "default": {
             "DC": "Cert_Collisions2024_378981_386951_Golden.json",
             "LUM": "puWeights_BCDEFGHI.json.gz",
             "JME": {
-                "MC": "Summer24Prompt24_V3 Summer24Prompt24_JRV1",
-                "Run2024C": "Summer24Prompt24_V3",
-                "Run2024D": "Summer24Prompt24_V3",
-                "Run2024E": "Summer24Prompt24_V3",
-                "Run2024F": "Summer24Prompt24_V3",
-                "Run2024G": "Summer24Prompt24_V3",
-                "Run2024H": "Summer24Prompt24_V3",
-                "Run2024I": "Summer24Prompt24_V3",
+                "MC": "Summer24Prompt24_V5 Summer24Prompt24_JRV2",
+                "Run2024C": "Summer24Prompt24_V5",
+                "Run2024D": "Summer24Prompt24_V5",
+                "Run2024E": "Summer24Prompt24_V5",
+                "Run2024F": "Summer24Prompt24_V5",
+                "Run2024G": "Summer24Prompt24_V5",
+                "Run2024H": "Summer24Prompt24_V5",
+                "Run2024I": "Summer24Prompt24_V5",
             },
             "jetveto": {"Summer24Prompt24_RunBCDEFGHI_V1": "jetvetomap"},
             "MUO": {
@@ -208,59 +393,38 @@ correction_config = {
                 "ele_Reco 2024Prompt Electron-ID-SF": "",
                 "ele_ID 2024Prompt Electron-ID-SF": "PromptMVA-Tight",
             },
+            # "BTV": {"ctag": "ctagging.json.gz"},
         },
-        #"lumiMask": "Cert_Collisions2024_378981_386951_Golden.json",
-        #"PU": "PU_weights_Summer24.histo.root",
-        #"JME": {
-        #    # TODO: JER are a placeholder for now (July 2025)
-        #    "MC": "Summer24Prompt24_V1 Summer23BPixPrompt23_RunD_JRV1",
-        #    "Run2024C": "Summer24Prompt24_V1",
-        #    "Run2024D": "Summer24Prompt24_V1",
-        #    "Run2024E": "Summer24Prompt24_V1",
-        #    "Run2024F": "Summer24Prompt24_V1",
-        #    "Run2024G": "Summer24Prompt24_V1",
-        #    "Run2024H": "Summer24Prompt24_V1",
-        #    "Run2024I": "Summer24Prompt24_V1",
-        #},
-        #"jetveto": {"Summer24Prompt24_RunBCDEFGHI_V1": "jetvetomap"},
-        #"LSF": {
-        #    "mu_ID": "NUM_TightID_DEN_TrackerMuons",
-        #    "mu_Iso": "NUM_TightPFIso_DEN_TightID",
-        #    "ele_Reco 2024 Electron-ID-SF": "",
-        #    "ele_ID 2024 Electron-ID-SF": "wp80iso",
-        #},
-        #"muonSS": "",
-        #"electronSS": ["EGMScale_Compound_Ele_2024", "EGMSmearAndSyst_ElePTsplit_2024"],
+        "tt_semilep_mu": {
+            "MUO": {
+                "mu_ID": "NUM_TightID_DEN_TrackerMuons",
+                "mu_Iso": "NUM_promptMVA_WP64ID_DEN_TightID",
+                "mu_Trig": "NUM_IsoMu24_DEN_CutBasedIdTight_and_PFIsoTight",  # in the future this should be something like NUM_IsoMu24_DEN_CutBasedIdTight_and_promptMVA_WP64ID
+            },
+        },
+        "tt_semilep_el": {
+            "EGM": {
+                "ele_Reco 2024Prompt Electron-ID-SF": "",
+                "ele_ID 2024Prompt Electron-ID-SF": "PromptMVA-Tight",
+                "ele_Trig 2024Prompt Electron-HLT-SF": "HLT_SF_Ele30_MVAiso80ID",  # in the future this should be something like HLT_SF_Ele30_PromptMVAID
+            },
+        },
     },
-    #"Prompt25": {
-    #    "lumiMask": "Cert_Collisions2025_391658_398903_Golden.json",
-    #    "PU": "PU_weights_Prompt25.histo.root",
-    #    "JME": {
-    #        "MC": "Winter25Prompt25_V3 Summer24Prompt25_JRV1",
-    #        "Run2025C": "Winter25Prompt25_V3",
-    #        "Run2025D": "Winter25Prompt25_V3",
-    #        "Run2025E": "Winter25Prompt25_V3",
-    #        "Run2025F": "Winter25Prompt25_V3",
-    #        "Run2025G": "Winter25Prompt25_V3",
-    #    },
-    #    "jetveto": {"Winter25Prompt25_RunCDEFG_V1": "jetvetomap"},
-    #},
     "Prompt25": {
         "default": {
             "DC": "Cert_Collisions2025_391658_398860_Golden.json",
-            "LUM": "puWeights2025.json.gz",
+            "LUM": "puWeights_2025pp_Golden_Summer24_25ns_69200ub.json.gz",
             # Year-dependent JES regrouped uncertainties use the MC JEC campaign year,
             # not the data year.  Summer24 JECs have "_2024_" in the correction names.
-            "JES_MC_year": "2024",
             "JME": {
-                "MC": "Summer24Prompt24_V3 Summer24Prompt25_JRV1",
-                "Run2025C": "Winter25Prompt25_V3",
-                "Run2025D": "Winter25Prompt25_V3",
-                "Run2025E": "Winter25Prompt25_V3",
-                "Run2025F": "Winter25Prompt25_V3",
-                "Run2025G": "Winter25Prompt25_V3",
+                "MC": "Summer24Prompt25_V3 Summer24Prompt25_JRV2",
+                "Run2025C": "Summer24Prompt25_V3",
+                "Run2025D": "Summer24Prompt25_V3",
+                "Run2025E": "Summer24Prompt25_V3",
+                "Run2025F": "Summer24Prompt25_V3",
+                "Run2025G": "Summer24Prompt25_V3",
             },
-            "jetveto": {"Winter25Prompt25_RunCDEFG_V1": "jetvetomap"},
+            "jetveto": {"Summer24Prompt25_RunCDEFG_V1": "jetvetomap"},
             "MUO": {
                 "mu_ID": "NUM_TightID_DEN_TrackerMuons",
                 "mu_Iso": "NUM_TightPFIso_DEN_TightID",
@@ -281,72 +445,27 @@ correction_config = {
             # JME_MC: MC truth JECs must come from the Summer24 era (L2Relative differs).
             # jetveto: jetvetomap from Winter25 JME era.
             "cvmfs_override": {
-                "JME": "Run3-25Prompt-Winter25-NanoAODv15",
-                "JME_MC": "Run3-24CDEReprocessingFGHIPrompt-Summer24-NanoAODv15",
-                "jetveto": "Run3-25Prompt-Winter25-NanoAODv15",
+                "JME": "Run3-25Prompt-Summer24-NanoAODv15",
+                "JME_MC": "Run3-25Prompt-Summer24-NanoAODv15",
+                "jetveto": "Run3-25Prompt-Summer24-NanoAODv15",
+            },
+        },
+        "tt_semilep_mu": {
+            "MUO": {
+                "mu_ID": "NUM_TightID_DEN_TrackerMuons",
+                "mu_Iso": "NUM_promptMVA_WP64ID_DEN_TightID",
+                "mu_Trig": "NUM_IsoMu24_DEN_CutBasedIdTight_and_PFIsoTight",  # in the future this should be something like NUM_IsoMu24_DEN_CutBasedIdTight_and_promptMVA_WP64ID
+            },
+        },
+        "tt_semilep_el": {
+            "EGM": {
+                "ele_Reco 2024Prompt Electron-ID-SF": "",
+                "ele_ID 2024Prompt Electron-ID-SF": "PromptMVA-Tight",
+                "ele_Trig 2024Prompt Electron-HLT-SF": "HLT_SF_Ele30_MVAiso80ID",  # in the future this should be something like HLT_SF_Ele30_PromptMVAID
             },
         },
     },
-    "UL16preVFP": {
-        "lumiMask": "Cert_271036-284044_13TeV_Legacy2016HIPM_Collisions16_JSON.txt",
-        "PU": "PU_weights_UL16preVFP.histo.root",
-        "JME": {  
-            "MC": "Summer20UL16APV_V1 Summer20UL16APV_JRV3",
-            "Run2016B": "Summer20UL16APV_RunBCD_V1",
-            "Run2016C": "Summer20UL16APV_RunBCD_V1",
-            "Run2016D": "Summer20UL16APV_RunBCD_V1",
-            "Run2016E": "Summer20UL16APV_RunEF_V1",
-            "Run2016F": "Summer20UL16APV_RunEF_V1",
-        },
+    "prompt_dataMC": {
+        "default": {"DC": "$PROMPT_DATAMC"},
     },
-    "UL16postVFP": {
-        "lumiMask": "Cert_271036-284044_13TeV_Legacy2016noHIPM_Collisions16_JSON.txt",
-        "PU": "PU_weights_UL16postVFP.histo.root",
-        "JME": {
-            "MC": "Summer20UL16_V1 Summer20UL16_JRV3",
-            "Run2016F": "Summer20UL16_RunFGH_V1",
-            "Run2016G": "Summer20UL16_RunFGH_V1",
-            "Run2016H": "Summer20UL16_RunFGH_V1",
-        },
-    },
-    "UL17": {
-        "lumiMask": "Cert_294927-306462_13TeV_UL2017_Collisions17_GoldenJSON.txt",
-        "PU": "PU_weights_UL17.histo.root",
-        "JME": {
-            "MC": "Summer20UL17_V1 Summer19UL17_JRV3",
-            "Run2017B": "Summer20UL17_RunB_V1",
-            "Run2017C": "Summer20UL17_RunC_V1",
-            "Run2017D": "Summer20UL17_RunD_V1",
-            "Run2017E": "Summer20UL17_RunE_V1",
-            "Run2017F": "Summer20UL17_RunF_V1",
-        },
-    },
-    "UL18": {
-        "lumiMask": "Cert_314472-325175_13TeV_Legacy2018_Collisions18_JSON.txt",
-        "PU": "PU_weights_UL18.histo.root",
-        "JME": {
-            "MC": "Summer20UL18_V1 Summer19UL18_JRV2",
-            "Run2018A": "Summer20UL18_RunA_V1",
-            "Run2018B": "Summer20UL18_RunB_V1",
-            "Run2018C": "Summer20UL18_RunC_V1",
-            "Run2018D": "Summer20UL18_RunD_V1",
-        },
-    },
-    "UL16v15": {
-        "lumiMask": "Cert_271036-284044_13TeV_Legacy2016noHIPM_Collisions16_JSON.txt",
-        "PU": "PU_weights_UL16v15.histo.root",
-    },
-    "UL16APVv15": {
-        "lumiMask": "Cert_271036-284044_13TeV_Legacy2016HIPM_Collisions16_JSON.txt",
-        "PU": "PU_weights_UL16APVv15.histo.root",
-    },
-    "UL17v15": {
-        "lumiMask": "Cert_294927-306462_13TeV_UL2017_Collisions17_GoldenJSON.txt",
-        "PU": "PU_weights_UL17v15.histo.root",
-    },
-    "UL18v15": {
-        "lumiMask": "Cert_314472-325175_13TeV_Legacy2018_Collisions18_JSON.txt",
-        "PU": "PU_weights_UL18v15.histo.root",
-    },
-    "prompt_dataMC": {"lumiMask": "$PROMPT_DATAMC"},
 }
