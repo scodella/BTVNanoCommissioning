@@ -53,6 +53,7 @@ def jet_id(events, campaign, max_eta=2.5, min_pt=20):
         "Summer24",
         "Winter25",
         "Prompt25",
+        "Prompt26",
     ]:
         # NanoV13+ / NanoV15 reprocessing (no jetId branch, compute from components)
         barrel = (
@@ -185,7 +186,7 @@ def jet_id(events, campaign, max_eta=2.5, min_pt=20):
 def ele_cuttightid(events, campaign):
     ele_etaSC = (
         events.Electron.eta + events.Electron.deltaEtaSC
-        if campaign not in ["Summer24", "Winter25", "Prompt25"]
+        if campaign not in ["Summer24", "Winter25", "Prompt25", "Prompt26"]
         else events.Electron.superclusterEta
     )
     elemask = (
@@ -197,7 +198,7 @@ def ele_cuttightid(events, campaign):
 def ele_mvatightid(events, campaign):
     ele_etaSC = (
         events.Electron.eta + events.Electron.deltaEtaSC
-        if campaign not in ["Summer24", "Winter25", "Prompt25"]
+        if campaign not in ["Summer24", "Winter25", "Prompt25", "Prompt26"]
         else events.Electron.superclusterEta
     )
     elemask = (
@@ -210,14 +211,14 @@ def ele_promptmvaid(events, campaign):
     # https://indico.cern.ch/event/1575017/contributions/6635248/attachments/3115862/5524310/EGammaAug08.pdf
     ele_etaSC = (
         events.Electron.eta + events.Electron.deltaEtaSC
-        if campaign not in ["Summer24", "Winter25", "Prompt25"]
+        if campaign not in ["Summer24", "Winter25", "Prompt25", "Prompt26"]
         else events.Electron.superclusterEta
     )
     elemask = (
         (abs(ele_etaSC) < 1.4442) | ((abs(ele_etaSC) > 1.566) & (abs(ele_etaSC) < 2.5))
     ) & (
         events.Electron.promptMVA >= 0.9
-        if campaign in ["Summer24", "Winter25", "Prompt25"]
+        if campaign in ["Summer24", "Winter25", "Prompt25", "Prompt26"]
         else 0.3
     )
     return elemask
@@ -635,6 +636,25 @@ btag_wp_dict = {
             },
         },
     },
+    "2026_Prompt26": {
+        "UParTAK4": {
+            "b": {
+                "No": 0.0,
+                "L": 0.0246,
+                "M": 0.1272,
+                "T": 0.4648,
+                "XT": 0.6298,
+                "XXT": 0.9739,
+            },
+            "c": {
+                "No": [0.0, 0.0],
+                "L": [0.086, 0.233],  # CvL, then CvB
+                "M": [0.291, 0.457],
+                "T": [0.650, 0.421],
+                "XT": [0.810, 0.736],
+            },
+        },
+    },
 }
 
 
@@ -916,7 +936,7 @@ met_filters = {
             "ecalBadCalibFilter",
         ],
     },
-    "25Prompt": {
+    "Prompt26": {
         "data": [
             "goodVertices",
             "globalSuperTightHalo2016Filter",
@@ -925,6 +945,7 @@ met_filters = {
             "BadPFMuonDzFilter",
             "hfNoisyHitsFilter",
             "eeBadScFilter",
+            "ecalBadCalibFilter",
         ],
         "mc": [
             "goodVertices",
@@ -934,6 +955,7 @@ met_filters = {
             "BadPFMuonDzFilter",
             "hfNoisyHitsFilter",
             "eeBadScFilter",
+            "ecalBadCalibFilter",
         ],
     },
     "prompt_dataMC": {

@@ -465,6 +465,30 @@ correction_config = {
             },
         },
     },
+    "Prompt26": {
+        "default": {
+            "DC": "Cert_Collisions2026_401624_403937_golden.json",
+            "LUM": "puWeights_XXX.json.gz",
+            # Year-dependent JES regrouped uncertainties use the MC JEC campaign year,
+            # not the data year.  Summer24 JECs have "_2024_" in the correction names.
+            "JME": {
+                "MC": "Summer24Prompt26_V1 Summer24Prompt26_RunBD_JRV1",
+                "Run2026B": "Summer24Prompt26_V1",
+                "Run2026C": "Summer24Prompt26_V1",
+                "Run2026D": "Summer24Prompt26_V1",
+            },
+            "jetveto": {"Summer24Prompt26_RunBCD_V1": "jetvetomap"},
+            # Per-POG CVMFS path overrides.
+            # JME: data L2L3Residual from Winter25 JME era.
+            # JME_MC: MC truth JECs must come from the Summer24 era (L2Relative differs).
+            # jetveto: jetvetomap from Winter25 JME era.
+            "cvmfs_override": {
+                "JME": "Run3-26Prompt-Summer24-NanoAODv15",
+                "JME_MC": "Run3-26Prompt-Summer24-NanoAODv15",
+                "jetveto": "Run3-26Prompt-Summer24-NanoAODv15",
+            },
+        },
+    },
     "prompt_dataMC": {
         "default": {"DC": "$PROMPT_DATAMC"},
     },
