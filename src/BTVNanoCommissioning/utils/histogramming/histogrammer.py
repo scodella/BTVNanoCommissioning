@@ -380,14 +380,16 @@ def histo_writter(pruned_ev, output, weights, systematics, isSyst, SF_map):
 
             elif "jetPtBin" in pruned_ev.SelJet.fields:
                 if "jetpt"==histname or "jeteta"==histname:
+                    jet_syst = np.full(len(flatten(pruned_ev.SelJet.pt)), syst[0])
                     jetweight = ak.values_astype( weight*pruned_ev.SelJet["jetWeight"], float, )
                     if "jetpt"==histname:
-                        output["jetpt"].fill(syst, ptbin=flatten(pruned_ev.SelJet["jetPtBin"]), jetpt=flatten(pruned_ev.SelJet.pt), weight=flatten(jetweight))
+                        output["jetpt"].fill(syst=jet_syst, ptbin=flatten(pruned_ev.SelJet["jetPtBin"]), jetpt=flatten(pruned_ev.SelJet.pt), weight=flatten(jetweight))
                     elif "jeteta"==histname:
-                        output["jeteta"].fill(syst, ptbin=flatten(pruned_ev.SelJet["jetPtBin"]), jeteta=flatten(pruned_ev.SelJet.eta), weight=flatten(jetweight))
+                        output["jeteta"].fill(syst=jet_syst, ptbin=flatten(pruned_ev.SelJet["jetPtBin"]), jeteta=flatten(pruned_ev.SelJet.eta), weight=flatten(jetweight))
                 elif "ptrel"==histname:
+                    trk_syst = np.full(len(flatten(pruned_ev.TrkInc.ptrel)), syst[0])
                     trkweight = ak.values_astype( weight*pruned_ev.TrkInc["jetWeight"]/pruned_ev.TrkInc["nTrkInc"], float, )
-                    output["ptrel"].fill(syst, ptbin=flatten(pruned_ev.TrkInc.jetPtBin), mujetdr=flatten(pruned_ev.TrkInc.muJetDR), ptrel=flatten(pruned_ev.TrkInc.ptrel), weight=flatten(trkweight))
+                    output["ptrel"].fill(syst=trk_syst, ptbin=flatten(pruned_ev.TrkInc.jetPtBin), mujetdr=flatten(pruned_ev.TrkInc.muJetDR), ptrel=flatten(pruned_ev.TrkInc.ptrel), weight=flatten(trkweight))
 
             elif "jetPtBin" in pruned_ev.fields:
                 if "nPV"==histname:
@@ -397,18 +399,19 @@ def histo_writter(pruned_ev, output, weights, systematics, isSyst, SF_map):
                 elif "jeteta"==histname:
                     output["jeteta"].fill(syst, ptbin=pruned_ev["jetPtBin"], jeteta=pruned_ev.SelJet.eta, weight=weight)
                 elif "DR"==histname:
-                    output["DR"].fill(syst, ptbin=pruned_ev["jetPtBin"], flav=pruned_ev["jetFlavour"], mujetdr=pruned_ev["muJetDR"], weight=weight)
+                    output["DR"].fill(syst, ptbin=pruned_ev["jetPtBin"], flav=pruned_ev["jetFlavour"], mujetdrkin=pruned_ev["muJetDR"], weight=weight)
                 elif "muopt"==histname:
                     output["muopt"].fill(syst, ptbin=pruned_ev["jetPtBin"], flav=pruned_ev["jetFlavour"], muopt=pruned_ev.SelMuo.pt, weight=weight)
                 elif "muonDR"==histname:
-                    output["muonDR"].fill(syst, ptbin=pruned_ev["jetPtBin"], flav=pruned_ev["jetFlavour"], ptrelcut=(pruned_ev["ptrel"]>=1.5), mujetdr=pruned_ev["muJetDR"], weight=weight)
+                    output["muonDR"].fill(syst, ptbin=pruned_ev["jetPtBin"], flav=pruned_ev["jetFlavour"], ptrelcut=(pruned_ev["ptrel"]>=1.5), mujetdrkin=pruned_ev["muJetDR"], weight=weight)
                 elif "ptrel"==histname:
                     output["ptrel"].fill(syst, ptbin=pruned_ev["jetPtBin"], flav=pruned_ev["jetFlavour"], mujetdrcut=(pruned_ev["muJetDR"]>=0.1), ptrel=pruned_ev["ptrel"], weight=weight)
                 elif "awayJetBTagDiscriminant"==histname:
                     output["awayJetBTagDiscriminant"].fill(syst, ptbin=pruned_ev["jetPtBin"], flav=pruned_ev["jetFlavour"], awayjetdrcut=(pruned_ev["awayJetDR"]>=1.5), btagdisc=pruned_ev["awayJetBTagDiscriminant"], weight=weight)
                 elif "awayJetDR"==histname:
                     output["awayJetDR"].fill(syst, ptbin=pruned_ev["jetPtBin"], flav=pruned_ev["jetFlavour"], awayjetbtagcut=pruned_ev["awayJetBTagged"], awayjetdr=pruned_ev["awayJetDR"], weight=weight)
-                elif "ptrel_" in histname:                                                                                                                                                                  if "taggedAwayJet" in pruned_ev.fields:
+                elif "ptrel_" in histname:   
+                    if "taggedAwayJet" in pruned_ev.fields:
                         output[histname].fill(syst=syst, ptbin=pruned_ev["jetPtBin"], flav=pruned_ev["jetFlavour"], ptrel=pruned_ev["ptrel"], btagwp=pruned_ev[histname.split("_")[1]], tagawj=pruned_ev["taggedAwayJet"], weight=weight)
                     else:
                         output[histname].fill(syst=syst, ptbin=pruned_ev["jetPtBin"], flav=pruned_ev["jetFlavour"], mujetdr=pruned_ev["muJetDR"], ptrel=pruned_ev["ptrel"], btagwp=pruned_ev[histname.split("_")[1]], weight=weight)
