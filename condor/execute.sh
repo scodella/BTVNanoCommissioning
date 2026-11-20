@@ -64,7 +64,6 @@ else
     tar xaf $WORKDIR/BTVNanoCommissioning.tar.gz
 fi
 
-pip install "correctionlib<2.8"
 pip install -e .
 
 ## other dependencies
