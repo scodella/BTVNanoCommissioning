@@ -49,7 +49,7 @@ def load_Campaign(self):
     self.triggerInfos['BTagMu_AK4DiJet170_Mu5'] = { 'jetPtRange' : [ 200.,  300. ], 'ptAwayJet' : 30., 'ptTriggerEmulation' : 200., 'jetTrigger' : 'PFJet140' }
     self.triggerInfos['BTagMu_AK4Jet300_Mu5']   = { 'jetPtRange' : [ 300., 1400. ], 'ptAwayJet' : 30., 'ptTriggerEmulation' :   0., 'jetTrigger' : 'PFJet260' }
    
-    if self._campaign=="Summer24" or self._campaign=="Prompt25":
+    if self._campaign=="Summer24" or self._campaign=="Prompt25" or self._campaign=="Prompt26":
         totalLuminosity = 106787.472039533859253
         self.triggerInfos['BTagMu_AK4DiJet20_Mu5']['relativeEffectiveLuminosity']     = 33.365124159121163/totalLuminosity
         self.triggerInfos['BTagMu_AK4DiJet20_Mu5']['jetRelativeEffectiveLuminosity']  = 0.216365419814463/totalLuminosity
@@ -92,7 +92,7 @@ def load_Campaign(self):
 
     ## bCorrector
     if len(list(btag_wp_dict[self._year+"_"+self._campaign].keys()))==1:
-        if self._campaign=="Summer24" or self._campaign=="Prompt25":
+        if self._campaign=="Summer24" or self._campaign=="Prompt25" or self._campaign=="Prompt26":
             self.bCorrectorDiscriminant = "btagDeepFlavB" 
             self.bCorrectorCut = 0.6708 
 
@@ -144,6 +144,7 @@ def load_Campaign(self):
     elif self._year=="2023": self.ps_run_num = "366727_370790"
     elif self._year=="2024": self.ps_run_num = "378985_386951"
     elif self._year=="2025": self.ps_run_num = "391668_398860"
+    elif self._year=="2026": self.ps_run_num = "401630_403867"
 
 def pthat_safety_cut(ptHatSafetyCuts, pthat): # This kind of sucks!!!
     evt_zeros = ak.zeros_like(pthat)
